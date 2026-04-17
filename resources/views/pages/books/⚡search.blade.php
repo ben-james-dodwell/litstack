@@ -63,10 +63,19 @@ new #[Title('Search Books')] class extends Component {
             return;
         }
 
+        $service = app(OpenLibraryService::class);
+
         $book = Book::firstOrCreate(
             ['open_library_id' => $bookData['open_library_id']],
             collect($bookData)->except('open_library_id')->all(),
         );
+
+        if ($book->wasRecentlyCreated && blank($book->description)) {
+            $details = $service->fetchDetails($bookData['open_library_id']);
+            if ($details) {
+                $book->update($details);
+            }
+        }
 
         UserBook::firstOrCreate(
             ['user_id' => Auth::id(), 'book_id' => $book->id],
@@ -80,70 +89,68 @@ new #[Title('Search Books')] class extends Component {
     }
 }; ?>
 
-<x-layouts::app :title="__('Search Books')">
-    <div class="flex h-full w-full flex-1 flex-col gap-6 p-6">
-        <div class="max-w-xl">
-            <flux:heading size="xl">{{ __('Search Books') }}</flux:heading>
-            <flux:subheading>{{ __('Search the Open Library catalogue to add books to your shelf.') }}</flux:subheading>
-        </div>
+<div class="flex h-full w-full flex-1 flex-col gap-6 p-6">
+    <div class="max-w-xl">
+        <flux:heading size="xl">{{ __('Search Books') }}</flux:heading>
+        <flux:subheading>{{ __('Search the Open Library catalogue to add books to your shelf.') }}</flux:subheading>
+    </div>
 
-        <flux:input
-            wire:model.live.debounce.400ms="query"
-            icon="magnifying-glass"
-            placeholder="{{ __('Search by title, author, or ISBN…') }}"
-            clearable
-            class="max-w-xl"
-        />
+    <flux:input
+        wire:model.live.debounce.400ms="query"
+        icon="magnifying-glass"
+        placeholder="{{ __('Search by title, author, or ISBN…') }}"
+        clearable
+        class="max-w-xl"
+    />
 
-        @if (strlen(trim($query)) >= 2)
-            @if (count($this->results) > 0)
-                <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                    @foreach ($this->results as $book)
-                        @php $onShelf = in_array($book['open_library_id'], $this->userBookIds); @endphp
-                        <div class="flex flex-col gap-2">
-                            <div class="relative aspect-[2/3] overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800">
-                                @if ($book['cover_url'])
-                                    <img
-                                        src="{{ $book['cover_url'] }}"
-                                        alt="{{ $book['title'] }}"
-                                        class="h-full w-full object-cover"
-                                        loading="lazy"
-                                    />
-                                @else
-                                    <div class="flex h-full items-center justify-center p-4 text-center">
-                                        <flux:text class="text-xs text-zinc-400">{{ __('No cover') }}</flux:text>
-                                    </div>
-                                @endif
-                            </div>
-
-                            <div class="flex flex-col gap-1">
-                                <flux:text class="line-clamp-2 text-sm font-medium">{{ $book['title'] }}</flux:text>
-                                @if ($book['author'])
-                                    <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">{{ $book['author'] }}</flux:text>
-                                @endif
-                                @if ($book['published_year'])
-                                    <flux:text class="text-xs text-zinc-400 dark:text-zinc-500">{{ $book['published_year'] }}</flux:text>
-                                @endif
-                            </div>
-
-                            @if ($onShelf)
-                                <flux:badge color="green" size="sm" class="w-fit">{{ __('On shelf') }}</flux:badge>
+    @if (strlen(trim($query)) >= 2)
+        @if (count($this->results) > 0)
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                @foreach ($this->results as $book)
+                    @php $onShelf = in_array($book['open_library_id'], $this->userBookIds); @endphp
+                    <div class="flex flex-col gap-2">
+                        <div class="relative aspect-[2/3] overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                            @if ($book['cover_url'])
+                                <img
+                                    src="{{ $book['cover_url'] }}"
+                                    alt="{{ $book['title'] }}"
+                                    class="h-full w-full object-cover"
+                                    loading="lazy"
+                                />
                             @else
-                                <flux:button
-                                    size="sm"
-                                    wire:click="selectBook('{{ $book['open_library_id'] }}')"
-                                >
-                                    {{ __('Add to shelf') }}
-                                </flux:button>
+                                <div class="flex h-full items-center justify-center p-4 text-center">
+                                    <flux:text class="text-xs text-zinc-400">{{ __('No cover') }}</flux:text>
+                                </div>
                             @endif
                         </div>
-                    @endforeach
-                </div>
-            @else
-                <flux:text class="text-zinc-500">{{ __('No results found for') }} "{{ $query }}".</flux:text>
-            @endif
+
+                        <div class="flex flex-col gap-1">
+                            <flux:text class="line-clamp-2 text-sm font-medium">{{ $book['title'] }}</flux:text>
+                            @if ($book['author'])
+                                <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">{{ $book['author'] }}</flux:text>
+                            @endif
+                            @if ($book['published_year'])
+                                <flux:text class="text-xs text-zinc-400 dark:text-zinc-500">{{ $book['published_year'] }}</flux:text>
+                            @endif
+                        </div>
+
+                        @if ($onShelf)
+                            <flux:badge color="green" size="sm" class="w-fit">{{ __('On shelf') }}</flux:badge>
+                        @else
+                            <flux:button
+                                size="sm"
+                                wire:click="selectBook('{{ $book['open_library_id'] }}')"
+                            >
+                                {{ __('Add to shelf') }}
+                            </flux:button>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <flux:text class="text-zinc-500">{{ __('No results found for') }} "{{ $query }}".</flux:text>
         @endif
-    </div>
+    @endif
 
     <flux:modal name="add-to-shelf" class="max-w-sm">
         <div class="space-y-6">
@@ -168,4 +175,4 @@ new #[Title('Search Books')] class extends Component {
             </div>
         </div>
     </flux:modal>
-</x-layouts::app>
+</div>

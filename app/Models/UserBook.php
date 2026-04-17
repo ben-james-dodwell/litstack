@@ -15,6 +15,8 @@ class UserBook extends Pivot
     /** @use HasFactory<UserBookFactory> */
     use HasFactory;
 
+    protected $table = 'user_books';
+
     public $incrementing = true;
 
     protected function casts(): array

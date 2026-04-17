@@ -55,6 +55,40 @@ class OpenLibraryService
     }
 
     /**
+     * Fetch additional details (description, subjects) from the Works endpoint.
+     *
+     * @return array<string, mixed>
+     */
+    public function fetchDetails(string $openLibraryId): array
+    {
+        try {
+            $response = Http::timeout(10)
+                ->get(self::BASE_URL.$openLibraryId.'.json');
+
+            if (! $response->successful()) {
+                return [];
+            }
+
+            $data = $response->json();
+
+            $description = match (true) {
+                is_string($data['description'] ?? null) => $data['description'],
+                is_array($data['description'] ?? null) => $data['description']['value'] ?? null,
+                default => null,
+            };
+
+            return array_filter([
+                'description' => $description,
+            ]);
+
+        } catch (ConnectionException $e) {
+            Log::warning('Open Library fetchDetails failed', ['id' => $openLibraryId, 'error' => $e->getMessage()]);
+
+            return [];
+        }
+    }
+
+    /**
      * Search for a book by ISBN.
      *
      * @return array<string, mixed>|null
