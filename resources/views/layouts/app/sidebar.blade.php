@@ -16,6 +16,12 @@
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
+
+                <flux:sidebar.group :heading="__('Books')" class="grid">
+                    <flux:sidebar.item icon="magnifying-glass" :href="route('books.search')" :current="request()->routeIs('books.search')" wire:navigate>
+                        {{ __('Search') }}
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
             </flux:sidebar.nav>
 
             <flux:spacer />
