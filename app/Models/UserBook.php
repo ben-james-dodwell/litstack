@@ -17,6 +17,8 @@ class UserBook extends Pivot
 
     protected $table = 'user_books';
 
+    protected $primaryKey = 'id';
+
     public $incrementing = true;
 
     protected function casts(): array
@@ -54,6 +56,6 @@ class UserBook extends Pivot
     /** @return HasOne<Review, $this> */
     public function review(): HasOne
     {
-        return $this->hasOne(Review::class);
+        return $this->hasOne(Review::class, 'user_book_id', 'id');
     }
 }
