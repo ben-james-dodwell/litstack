@@ -8,7 +8,7 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('puzzle:seed {--limit=50 : Books per subject}')]
+#[Signature('puzzle:seed {--limit=50 : Books per subject} {--fresh : Truncate puzzle_books before seeding}')]
 #[Description('Seed puzzle_books from popular Open Library subjects')]
 class SeedPuzzleBooks extends Command
 {
@@ -28,6 +28,12 @@ class SeedPuzzleBooks extends Command
     public function handle(OpenLibraryService $service): int
     {
         $limit = (int) $this->option('limit');
+
+        if ($this->option('fresh')) {
+            PuzzleBook::truncate();
+            $this->line('  Cleared existing puzzle books.');
+        }
+
         $created = 0;
         $skipped = 0;
 
