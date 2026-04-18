@@ -104,25 +104,6 @@ select:focus[data-flux-control] {
     );
 }
 
-/* ── Mobile sidebar: slide from top instead of left ── */
-@media (max-width: 1023px) {
-    [data-flux-sidebar][data-flux-sidebar-on-mobile] {
-        inset-inline-start: 0 !important;
-        width: 100dvw !important;
-        min-height: auto !important;
-        max-height: 85dvh !important;
-        border-inline-end: none !important;
-        border-bottom: 1px solid var(--color-line);
-        overflow-y: auto;
-    }
-    [data-flux-sidebar][data-flux-sidebar-on-mobile][data-flux-sidebar-collapsed-mobile] {
-        transform: translateY(-100%) !important;
-    }
-    [data-flux-sidebar][data-flux-sidebar-on-mobile]:not([data-flux-sidebar-collapsed-mobile]) {
-        transform: translateY(0) !important;
-    }
-}
-
 /* ── Detail panel slide transition ── */
 .panel-slide-enter {
     transform: translateX(100%);

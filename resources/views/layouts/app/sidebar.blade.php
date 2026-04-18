@@ -14,14 +14,13 @@
             $wishlistCount = auth()->check() ? auth()->user()->userBooks()->where('ownership_status_id', $wishlistId)->count() : 0;
         @endphp
 
-        <flux:sidebar sticky collapsible="mobile"
-            class="border-e border-line bg-bg-2">
+        {{-- Desktop sidebar (hidden on mobile — replaced by top-dropdown nav below) --}}
+        <flux:sidebar sticky class="max-lg:hidden border-e border-line bg-bg-2">
 
             <flux:sidebar.header class="pb-4">
                 <a href="{{ route('books.shelf') }}" wire:navigate>
                     <x-app-logo class="px-1 py-0.5" />
                 </a>
-                <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
@@ -62,7 +61,6 @@
                         </span>
                     </flux:sidebar.item>
                 </flux:sidebar.group>
-
             </flux:sidebar.nav>
 
             <flux:spacer />
@@ -97,27 +95,82 @@
             @endauth
         </flux:sidebar>
 
-        {{-- Mobile header --}}
-        <flux:header class="lg:hidden border-b border-line bg-bg-2">
-            <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
-            <a href="{{ route('books.shelf') }}" wire:navigate class="absolute left-1/2 -translate-x-1/2">
-                <x-app-logo />
-            </a>
-            <flux:spacer />
-            @auth
-                <flux:dropdown position="bottom" align="end">
-                    <flux:profile :initials="auth()->user()->initials()" icon-trailing="chevron-down" />
-                    <flux:menu>
-                        <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
-                        <flux:menu.separator />
-                        <form method="POST" action="{{ route('logout') }}" class="w-full">
-                            @csrf
-                            <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">{{ __('Log out') }}</flux:menu.item>
-                        </form>
-                    </flux:menu>
-                </flux:dropdown>
-            @endauth
-        </flux:header>
+        {{-- Mobile header + dropdown nav --}}
+        <div
+            class="lg:hidden relative z-30"
+            x-data="{ open: false }"
+            @click.outside="open = false"
+            @keydown.escape.window="open = false"
+        >
+            {{-- Header bar --}}
+            <div class="flex h-14 items-center border-b border-line bg-bg-2 px-4">
+                <button
+                    @click="open = !open"
+                    class="flex h-9 w-9 items-center justify-center rounded-lg text-ink-2 transition hover:bg-bg-3"
+                    :aria-expanded="open"
+                    aria-label="{{ __('Toggle navigation') }}"
+                >
+                    <flux:icon.bars-2 x-show="!open" class="size-5" />
+                    <flux:icon.x-mark x-show="open" class="size-5" />
+                </button>
+
+                <a href="{{ route('books.shelf') }}" wire:navigate @click="open = false" class="absolute left-1/2 -translate-x-1/2">
+                    <x-app-logo />
+                </a>
+
+                @auth
+                    <flux:dropdown position="bottom" align="end" class="ml-auto">
+                        <flux:profile :initials="auth()->user()->initials()" />
+                        <flux:menu>
+                            <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
+                            <flux:menu.separator />
+                            <form method="POST" action="{{ route('logout') }}" class="w-full">
+                                @csrf
+                                <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">{{ __('Log out') }}</flux:menu.item>
+                            </form>
+                        </flux:menu>
+                    </flux:dropdown>
+                @endauth
+            </div>
+
+            {{-- Dropdown nav panel --}}
+            <div
+                x-show="open"
+                x-transition:enter="transition duration-200 ease-out"
+                x-transition:enter-start="-translate-y-1 opacity-0"
+                x-transition:enter-end="translate-y-0 opacity-100"
+                x-transition:leave="transition duration-150 ease-in"
+                x-transition:leave-start="translate-y-0 opacity-100"
+                x-transition:leave-end="-translate-y-1 opacity-0"
+                class="absolute left-0 right-0 border-b border-line bg-bg-2 px-3 py-2 shadow-[0_8px_24px_-8px_rgba(30,20,10,0.15)]"
+            >
+                <p class="px-3 pb-1.5 pt-0.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.07em] text-muted">Library</p>
+
+                <a href="{{ route('books.shelf') }}" wire:navigate @click="open = false"
+                   class="flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-sans text-[14px] transition hover:bg-bg-3
+                          {{ request()->routeIs('books.shelf') && !$ownedParam ? 'border border-line-2 bg-card font-semibold text-accent-ink' : 'text-ink' }}">
+                    <flux:icon.book-open class="size-4 shrink-0 {{ request()->routeIs('books.shelf') && !$ownedParam ? 'text-accent-ink' : 'text-muted' }}" />
+                    {{ __('All Books') }}
+                    <span class="ml-auto font-sans text-[12.5px] tabular-nums {{ request()->routeIs('books.shelf') && !$ownedParam ? 'text-accent-ink' : 'text-muted' }}">{{ $allCount }}</span>
+                </a>
+
+                <a href="{{ route('books.shelf') . '?ownership=' . $ownedId }}" wire:navigate @click="open = false"
+                   class="flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-sans text-[14px] transition hover:bg-bg-3
+                          {{ request()->routeIs('books.shelf') && $ownedParam == $ownedId ? 'border border-line-2 bg-card font-semibold text-accent-ink' : 'text-ink' }}">
+                    <flux:icon.check class="size-4 shrink-0 {{ request()->routeIs('books.shelf') && $ownedParam == $ownedId ? 'text-accent-ink' : 'text-muted' }}" />
+                    {{ __('Owned') }}
+                    <span class="ml-auto font-sans text-[12.5px] tabular-nums {{ request()->routeIs('books.shelf') && $ownedParam == $ownedId ? 'text-accent-ink' : 'text-muted' }}">{{ $ownedCount }}</span>
+                </a>
+
+                <a href="{{ route('books.shelf') . '?ownership=' . $wishlistId }}" wire:navigate @click="open = false"
+                   class="flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-sans text-[14px] transition hover:bg-bg-3
+                          {{ request()->routeIs('books.shelf') && $ownedParam == $wishlistId ? 'border border-line-2 bg-card font-semibold text-accent-ink' : 'text-ink' }}">
+                    <flux:icon.bookmark class="size-4 shrink-0 {{ request()->routeIs('books.shelf') && $ownedParam == $wishlistId ? 'text-accent-ink' : 'text-muted' }}" />
+                    {{ __('Wishlist') }}
+                    <span class="ml-auto font-sans text-[12.5px] tabular-nums {{ request()->routeIs('books.shelf') && $ownedParam == $wishlistId ? 'text-accent-ink' : 'text-muted' }}">{{ $wishlistCount }}</span>
+                </a>
+            </div>
+        </div>
 
         {{ $slot }}
 
