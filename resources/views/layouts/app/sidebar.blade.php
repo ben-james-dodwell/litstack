@@ -19,6 +19,12 @@
                         {{ __('Search') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
+
+                <flux:sidebar.group :heading="__('Game')" class="grid">
+                    <flux:sidebar.item icon="puzzle-piece" :href="route('game')" :current="request()->routeIs('game')" wire:navigate>
+                        {{ __('Daily Puzzle') }}
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
             </flux:sidebar.nav>
 
             <flux:spacer />
