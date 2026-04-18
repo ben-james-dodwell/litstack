@@ -9,6 +9,9 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 
 new #[Title('My Shelf')] class extends Component {
+    #[Url(as: 'q')]
+    public string $search = '';
+
     #[Url(as: 'ownership')]
     public string $ownershipFilter = '';
 
@@ -58,6 +61,7 @@ new #[Title('My Shelf')] class extends Component {
         return Auth::user()
             ->userBooks()
             ->with(['book', 'ownershipStatus', 'readingStatus', 'review'])
+            ->when(filled($this->search), fn ($q) => $q->whereHas('book', fn ($q) => $q->where('title', 'like', "%{$this->search}%")->orWhere('author', 'like', "%{$this->search}%")))
             ->when(filled($this->ownershipFilter), fn ($q) => $q->where('ownership_status_id', $this->ownershipFilter))
             ->when(filled($this->readingFilter), fn ($q) => $q->where('reading_status_id', $this->readingFilter))
             ->when($this->authorFilter, fn ($q) => $q->whereHas('book', fn ($q) => $q->where('author', $this->authorFilter)))
@@ -109,6 +113,7 @@ new #[Title('My Shelf')] class extends Component {
 
     public function clearFilters(): void
     {
+        $this->search          = '';
         $this->ownershipFilter = '';
         $this->readingFilter   = '';
         $this->authorFilter    = '';
@@ -148,42 +153,18 @@ new #[Title('My Shelf')] class extends Component {
             </div>
         </div>
 
-        {{-- Currently reading --}}
-        @if ($this->stats['reading'] > 0 && blank($this->readingFilter))
-            <div class="flex flex-col gap-3">
-                <flux:heading>{{ __('Currently Reading') }}</flux:heading>
-                <div class="flex gap-4 overflow-x-auto pb-1">
-                    @foreach ($this->currentlyReading as $userBook)
-                        <a href="{{ route('books.show', $userBook) }}" wire:navigate class="group flex w-28 shrink-0 flex-col gap-2">
-                            <div class="aspect-[2/3] overflow-hidden rounded-lg bg-zinc-100 transition-transform group-hover:scale-[1.02] dark:bg-zinc-800">
-                                @if ($userBook->book->cover_url)
-                                    <img
-                                        src="{{ $userBook->book->cover_url }}"
-                                        alt="{{ $userBook->book->title }}"
-                                        class="h-full w-full object-cover"
-                                    />
-                                @else
-                                    <div class="flex h-full items-center justify-center p-2 text-center">
-                                        <flux:text class="text-xs text-zinc-400">{{ $userBook->book->title }}</flux:text>
-                                    </div>
-                                @endif
-                            </div>
-                            <div>
-                                <flux:text class="line-clamp-2 text-xs font-medium">{{ $userBook->book->title }}</flux:text>
-                                @if ($userBook->started_at)
-                                    <flux:text class="text-xs text-zinc-500">
-                                        {{ __('Day :n', ['n' => $userBook->started_at->diffInDays(now()) + 1]) }}
-                                    </flux:text>
-                                @endif
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-        @endif
     @endif
 
-    {{-- Filters --}}
+    {{-- Search + Filters --}}
+    <div class="flex flex-col gap-3">
+    <flux:input
+        wire:model.live.debounce.300ms="search"
+        icon="magnifying-glass"
+        placeholder="{{ __('Search by title or author…') }}"
+        clearable
+        class="max-w-sm"
+    />
+
     <div class="flex flex-wrap items-end gap-3">
         <flux:select wire:model.live="ownershipFilter" class="w-40">
             <flux:select.option value="">{{ __('All shelves') }}</flux:select.option>
@@ -217,12 +198,47 @@ new #[Title('My Shelf')] class extends Component {
             </flux:select>
         @endif
 
-        @if ($ownershipFilter || $readingFilter || $authorFilter || $genreFilter)
+        @if ($search || $ownershipFilter || $readingFilter || $authorFilter || $genreFilter)
             <flux:button wire:click="clearFilters" variant="ghost" size="sm" icon="x-mark">
-                {{ __('Clear filters') }}
+                {{ __('Clear') }}
             </flux:button>
         @endif
     </div>
+    </div>
+
+    {{-- Currently reading --}}
+    @if ($this->stats['total'] > 0 && $this->stats['reading'] > 0 && blank($this->readingFilter))
+        <div class="flex flex-col gap-3">
+            <flux:heading>{{ __('Currently Reading') }}</flux:heading>
+            <div class="flex gap-4 overflow-x-auto pb-1">
+                @foreach ($this->currentlyReading as $userBook)
+                    <a href="{{ route('books.show', $userBook) }}" wire:navigate class="group flex w-28 shrink-0 flex-col gap-2">
+                        <div class="aspect-[2/3] overflow-hidden rounded-lg bg-zinc-100 transition-transform group-hover:scale-[1.02] dark:bg-zinc-800">
+                            @if ($userBook->book->cover_url)
+                                <img
+                                    src="{{ $userBook->book->cover_url }}"
+                                    alt="{{ $userBook->book->title }}"
+                                    class="h-full w-full object-cover"
+                                />
+                            @else
+                                <div class="flex h-full items-center justify-center p-2 text-center">
+                                    <flux:text class="text-xs text-zinc-400">{{ $userBook->book->title }}</flux:text>
+                                </div>
+                            @endif
+                        </div>
+                        <div>
+                            <flux:text class="line-clamp-2 text-xs font-medium">{{ $userBook->book->title }}</flux:text>
+                            @if ($userBook->started_at)
+                                <flux:text class="text-xs text-zinc-500">
+                                    {{ __('Day :n', ['n' => (int) $userBook->started_at->diffInDays(now()) + 1]) }}
+                                </flux:text>
+                            @endif
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     {{-- Book grid --}}
     @if (count($this->userBooks) > 0)

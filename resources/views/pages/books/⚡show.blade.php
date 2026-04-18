@@ -142,6 +142,12 @@ new #[Title('Book')] class extends Component {
     }
 }; ?>
 
+@script
+<script>
+    document.title = @js($this->userBook->book->title . ' — ' . config('app.name'));
+</script>
+@endscript
+
 <div class="flex h-full w-full flex-1 flex-col gap-6 p-6">
     {{-- Back link --}}
     <div>

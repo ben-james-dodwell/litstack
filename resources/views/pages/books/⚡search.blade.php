@@ -21,11 +21,27 @@ new #[Title('Search Books')] class extends Component {
     #[Computed]
     public function results(): array
     {
-        if (strlen(trim($this->query)) < 2) {
+        $query = trim($this->query);
+
+        if (strlen($query) < 2) {
             return [];
         }
 
-        return app(OpenLibraryService::class)->search($this->query);
+        $service = app(OpenLibraryService::class);
+
+        if ($this->looksLikeIsbn($query)) {
+            $book = $service->findByIsbn(preg_replace('/[\s\-]/', '', $query));
+
+            return $book ? [$book] : [];
+        }
+
+        return $service->search($query);
+    }
+
+    #[Computed]
+    public function isIsbnSearch(): bool
+    {
+        return $this->looksLikeIsbn(trim($this->query));
     }
 
     #[Computed]
@@ -94,12 +110,19 @@ new #[Title('Search Books')] class extends Component {
 
         unset($this->userBookIds);
     }
+
+    private function looksLikeIsbn(string $query): bool
+    {
+        $clean = preg_replace('/[\s\-]/', '', $query);
+
+        return (bool) preg_match('/^\d{9}[\dX]$/i', $clean) || (bool) preg_match('/^\d{13}$/', $clean);
+    }
 }; ?>
 
 <div class="flex h-full w-full flex-1 flex-col gap-6 p-6">
     <div class="max-w-xl">
         <flux:heading size="xl">{{ __('Search Books') }}</flux:heading>
-        <flux:subheading>{{ __('Search the Open Library catalogue to add books to your shelf.') }}</flux:subheading>
+        <flux:subheading>{{ __('Search by title, author, or paste an ISBN.') }}</flux:subheading>
     </div>
 
     <flux:input
@@ -111,6 +134,14 @@ new #[Title('Search Books')] class extends Component {
     />
 
     @if (strlen(trim($query)) >= 2)
+        @if ($this->isIsbnSearch)
+            @if (count($this->results) > 0)
+                <flux:text class="text-sm text-zinc-500">{{ __('ISBN match found.') }}</flux:text>
+            @else
+                <flux:text class="text-zinc-500">{{ __('No book found for ISBN') }} "{{ trim($query) }}".</flux:text>
+            @endif
+        @endif
+
         @if (count($this->results) > 0)
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                 @foreach ($this->results as $book)
@@ -154,7 +185,7 @@ new #[Title('Search Books')] class extends Component {
                     </div>
                 @endforeach
             </div>
-        @else
+        @elseif (! $this->isIsbnSearch)
             <flux:text class="text-zinc-500">{{ __('No results found for') }} "{{ $query }}".</flux:text>
         @endif
     @endif
