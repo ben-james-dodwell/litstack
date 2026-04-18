@@ -105,7 +105,9 @@ new #[Title('My Shelf')] class extends Component {
     #[Computed]
     public function readingStatuses()
     {
-        return ReadingStatus::all();
+        $order = ['in_progress' => 0, 'completed' => 1, 'abandoned' => 2];
+
+        return ReadingStatus::all()->sortBy(fn ($rs) => $order[$rs->name] ?? 99)->values();
     }
 
     #[Computed]
@@ -652,7 +654,7 @@ new #[Title('My Shelf')] class extends Component {
             {{-- Panel header --}}
             <div class="flex shrink-0 items-center justify-between border-b border-line px-5 py-3.5">
                 <span class="font-sans text-[11.5px] text-muted">
-                    Book{{ $sbBook->isbn ? ' · ISBN ' . $sbBook->isbn : '' }}
+                    Book{{ ($sbBook->isbn_13 ?? $sbBook->isbn_10) ? ' · ISBN ' . ($sbBook->isbn_13 ?? $sbBook->isbn_10) : '' }}
                 </span>
                 <div class="flex gap-1.5">
                     <button
@@ -697,15 +699,30 @@ new #[Title('My Shelf')] class extends Component {
                         @if ($sbBook->author)
                             <p class="mt-1 font-sans text-[14px] text-muted">by {{ $sbBook->author }}</p>
                         @endif
-                        <div class="mt-4 flex flex-wrap gap-x-5 gap-y-2 font-sans text-[11.5px] text-muted">
+                        <div class="mt-4 flex flex-wrap gap-x-6 gap-y-3">
                             @if ($sbBook->genres && count((array) $sbBook->genres))
-                                <div><strong class="block font-sans text-[13px] font-medium text-ink-2">{{ implode(', ', array_slice((array) $sbBook->genres, 0, 2)) }}</strong>Genre</div>
+                                <div>
+                                    <p class="font-sans text-[13px] font-medium text-ink-2">{{ implode(', ', array_slice((array) $sbBook->genres, 0, 2)) }}</p>
+                                    <p class="font-sans text-[11px] text-muted">Genre</p>
+                                </div>
                             @endif
                             @if ($sbBook->page_count)
-                                <div><strong class="block font-sans text-[13px] font-medium text-ink-2">{{ $sbBook->page_count }} pp</strong>Length</div>
+                                <div>
+                                    <p class="font-sans text-[13px] font-medium text-ink-2">{{ $sbBook->page_count }} pages</p>
+                                    <p class="font-sans text-[11px] text-muted">Length</p>
+                                </div>
+                            @endif
+                            @if ($sb->created_at)
+                                <div>
+                                    <p class="font-sans text-[13px] font-medium text-ink-2">{{ $sb->created_at->format('F Y') }}</p>
+                                    <p class="font-sans text-[11px] text-muted">Added</p>
+                                </div>
                             @endif
                             @if ($days)
-                                <div><strong class="block font-sans text-[13px] font-medium text-ink-2">{{ $days }} {{ $days === 1 ? 'day' : 'days' }}</strong>{{ $sb->ended_at ? 'Read in' : 'Reading for' }}</div>
+                                <div>
+                                    <p class="font-sans text-[13px] font-medium text-ink-2">{{ $days }} {{ $days === 1 ? 'day' : 'days' }}</p>
+                                    <p class="font-sans text-[11px] text-muted">{{ $sb->ended_at ? 'Read in' : 'Reading for' }}</p>
+                                </div>
                             @endif
                         </div>
                     </div>
