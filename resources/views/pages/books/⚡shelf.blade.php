@@ -699,29 +699,34 @@ new #[Title('My Shelf')] class extends Component {
                         @if ($sbBook->author)
                             <p class="mt-1 font-sans text-[14px] text-muted">by {{ $sbBook->author }}</p>
                         @endif
-                        <div class="mt-4 flex flex-wrap gap-x-6 gap-y-3">
-                            @if ($sbBook->genres && count((array) $sbBook->genres))
+                        <div class="mt-4 flex flex-col gap-3">
+                            {{-- Row 1: numeric / date stats --}}
+                            <div class="flex flex-wrap gap-x-6 gap-y-2">
+                                @if ($sbBook->page_count)
+                                    <div>
+                                        <p class="font-sans text-[11px] text-muted">Length</p>
+                                        <p class="font-sans text-[13px] font-medium text-ink-2">{{ $sbBook->page_count }} pages</p>
+                                    </div>
+                                @endif
+                                @if ($sb->created_at)
+                                    <div>
+                                        <p class="font-sans text-[11px] text-muted">Added</p>
+                                        <p class="font-sans text-[13px] font-medium text-ink-2">{{ $sb->created_at->format('F Y') }}</p>
+                                    </div>
+                                @endif
+                                @if ($days)
+                                    <div>
+                                        <p class="font-sans text-[11px] text-muted">{{ $sb->ended_at ? 'Read in' : 'Reading for' }}</p>
+                                        <p class="font-sans text-[13px] font-medium text-ink-2">{{ $days }} {{ $days === 1 ? 'day' : 'days' }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                            {{-- Row 2: genres --}}
+                            @php $sbGenres = collect($sbBook->genres)->all(); @endphp
+                            @if (count($sbGenres))
                                 <div>
-                                    <p class="font-sans text-[13px] font-medium text-ink-2">{{ implode(', ', array_slice((array) $sbBook->genres, 0, 2)) }}</p>
                                     <p class="font-sans text-[11px] text-muted">Genre</p>
-                                </div>
-                            @endif
-                            @if ($sbBook->page_count)
-                                <div>
-                                    <p class="font-sans text-[13px] font-medium text-ink-2">{{ $sbBook->page_count }} pages</p>
-                                    <p class="font-sans text-[11px] text-muted">Length</p>
-                                </div>
-                            @endif
-                            @if ($sb->created_at)
-                                <div>
-                                    <p class="font-sans text-[13px] font-medium text-ink-2">{{ $sb->created_at->format('F Y') }}</p>
-                                    <p class="font-sans text-[11px] text-muted">Added</p>
-                                </div>
-                            @endif
-                            @if ($days)
-                                <div>
-                                    <p class="font-sans text-[13px] font-medium text-ink-2">{{ $days }} {{ $days === 1 ? 'day' : 'days' }}</p>
-                                    <p class="font-sans text-[11px] text-muted">{{ $sb->ended_at ? 'Read in' : 'Reading for' }}</p>
+                                    <p class="font-sans text-[13px] font-medium text-ink-2">{{ implode(', ', $sbGenres) }}</p>
                                 </div>
                             @endif
                         </div>
@@ -849,14 +854,14 @@ new #[Title('My Shelf')] class extends Component {
             />
         </div>
 
-        <div class="max-h-[480px] overflow-y-auto p-2">
+        <div class="max-h-120 overflow-y-auto p-2">
             @if (strlen(trim($addQuery)) >= 2)
                 @if (count($this->addResults) > 0)
                     @foreach ($this->addResults as $addBook)
                         @php $onShelf = in_array($addBook['open_library_id'], $this->addUserBookIds); @endphp
                         @php $ap = $coverPalettes[crc32($addBook['open_library_id'] ?? '') % count($coverPalettes)]; @endphp
                         <div class="flex items-center gap-3.5 rounded-[10px] px-3 py-2.5 transition hover:bg-bg-2">
-                            <div class="aspect-[2/3] w-11 shrink-0 overflow-hidden rounded-sm shadow-sm">
+                            <div class="aspect-2/3 w-11 shrink-0 overflow-hidden rounded-sm shadow-sm">
                                 @if ($addBook['cover_url'])
                                     <img src="{{ $addBook['cover_url'] }}" alt="{{ $addBook['title'] }}" class="h-full w-full object-cover" loading="lazy" />
                                 @else
@@ -873,11 +878,11 @@ new #[Title('My Shelf')] class extends Component {
                                 </p>
                             </div>
                             @if ($onShelf)
-                                <span class="shrink-0 rounded-[8px] border border-line px-2.5 py-1.5 font-sans text-[12px] font-semibold text-muted">On shelf</span>
+                                <span class="shrink-0 rounded-lg border border-line px-2.5 py-1.5 font-sans text-[12px] font-semibold text-muted">On shelf</span>
                             @else
                                 <button
                                     wire:click="selectBookToAdd('{{ $addBook['open_library_id'] }}')"
-                                    class="shrink-0 flex items-center gap-1 rounded-[8px] border border-line-2 bg-card px-2.5 py-1.5 font-sans text-[12px] font-semibold text-ink-2 transition hover:border-accent hover:bg-accent-soft hover:text-accent-ink"
+                                    class="shrink-0 flex items-center gap-1 rounded-lg border border-line-2 bg-card px-2.5 py-1.5 font-sans text-[12px] font-semibold text-ink-2 transition hover:border-accent hover:bg-accent-soft hover:text-accent-ink"
                                 >
                                     <flux:icon.plus class="size-3" /> Add
                                 </button>
