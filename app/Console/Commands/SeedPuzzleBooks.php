@@ -9,7 +9,7 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('puzzle:seed {--limit=50 : Books per subject} {--fresh : Truncate puzzle_books before seeding}')]
+#[Signature('puzzle:seed {--limit=5 : Books per subject} {--fresh : Truncate puzzle_books before seeding}')]
 #[Description('Seed puzzle_books from popular Open Library subjects')]
 class SeedPuzzleBooks extends Command
 {
@@ -32,7 +32,7 @@ class SeedPuzzleBooks extends Command
 
         if ($this->option('fresh')) {
             PuzzleGame::query()->delete();
-            PuzzleBook::truncate();
+            PuzzleBook::query()->delete();
             $this->line('  Cleared existing puzzle games and books.');
         }
 
@@ -42,7 +42,7 @@ class SeedPuzzleBooks extends Command
         foreach (self::SUBJECTS as $subject) {
             $this->line("  Fetching subject: <comment>{$subject}</comment>");
 
-            $books = $service->fetchSubject($subject, $limit);
+            $books = $service->searchBySubject($subject, $limit);
 
             foreach ($books as $data) {
                 if (blank($data['open_library_id']) || blank($data['title'])) {
@@ -50,6 +50,12 @@ class SeedPuzzleBooks extends Command
                 }
 
                 if (! mb_detect_encoding($data['title'], 'ASCII', strict: true)) {
+                    continue;
+                }
+
+                if (blank($data['cover_url']) || blank($data['author'])) {
+                    $skipped++;
+
                     continue;
                 }
 
