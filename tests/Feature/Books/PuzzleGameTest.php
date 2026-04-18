@@ -83,7 +83,7 @@ test('skipping a round advances the round without recording a guess', function (
 test('exhausting all rounds marks game as completed and lost', function () {
     $component = Livewire::actingAs($this->user)->test('pages::game.index');
 
-    for ($i = 0; $i < 9; $i++) {
+    for ($i = 0; $i < 7; $i++) {
         $component->call('skipRound');
     }
 

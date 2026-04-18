@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\PuzzleBook;
+use App\Models\PuzzleGame;
 use App\Services\OpenLibraryService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -30,8 +31,9 @@ class SeedPuzzleBooks extends Command
         $limit = (int) $this->option('limit');
 
         if ($this->option('fresh')) {
+            PuzzleGame::query()->delete();
             PuzzleBook::truncate();
-            $this->line('  Cleared existing puzzle books.');
+            $this->line('  Cleared existing puzzle games and books.');
         }
 
         $created = 0;

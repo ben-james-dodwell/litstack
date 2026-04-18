@@ -11,7 +11,7 @@ class PuzzleService
 {
     private const EPOCH = '2026-01-01';
 
-    private const MAX_ROUNDS = 9;
+    private const MAX_ROUNDS = 7;
 
     private const OFFSET_CACHE_KEY = 'puzzle_day_offset';
 
@@ -71,31 +71,20 @@ class PuzzleService
                 'value' => $book->publisher,
             ],
             5 => [
-                'type' => 'cover',
-                'label' => 'Cover',
-                'value' => $book->cover_url,
-                'blur' => 'xl',
-            ],
-            6 => [
                 'type' => 'description_excerpt',
                 'label' => 'Description',
                 'value' => $book->description ? Str::limit($book->description, 200) : null,
             ],
-            7 => [
+            6 => [
                 'type' => 'author',
                 'label' => 'Author',
                 'value' => $book->author,
             ],
-            8 => [
+            7 => [
                 'type' => 'cover',
                 'label' => 'Cover',
                 'value' => $book->cover_url,
                 'blur' => 'sm',
-            ],
-            9 => [
-                'type' => 'description_full',
-                'label' => 'Description',
-                'value' => $book->description,
             ],
         ];
     }
