@@ -447,7 +447,7 @@ new #[Title('My Shelf')] class extends Component {
                         <flux:icon.funnel class="size-3.5 {{ $genreFilter ? 'text-accent-ink' : 'text-muted' }}" />
                         {{ $genreFilter ?: __('Genre') }}
                     </button>
-                    <div x-show="open" x-transition class="absolute right-0 top-[calc(100%+6px)] z-20 max-h-80 min-w-[200px] overflow-y-auto rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)]">
+                    <div x-show="open" x-transition class="absolute left-0 top-[calc(100%+6px)] z-20 max-h-80 min-w-50 overflow-y-auto rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)] sm:left-auto sm:right-0">
                         <button wire:click="$set('genreFilter', '')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ !$genreFilter ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ __('All genres') }}</button>
                         @foreach ($this->genres as $genre)
                             <button wire:click="$set('genreFilter', '{{ $genre }}')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ $genreFilter === $genre ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ $genre }}</button>
@@ -465,7 +465,7 @@ new #[Title('My Shelf')] class extends Component {
                         <flux:icon.funnel class="size-3.5 {{ $authorFilter ? 'text-accent-ink' : 'text-muted' }}" />
                         {{ $authorFilter ?: __('Author') }}
                     </button>
-                    <div x-show="open" x-transition class="absolute right-0 top-[calc(100%+6px)] z-20 max-h-80 min-w-[220px] overflow-y-auto rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)]">
+                    <div x-show="open" x-transition class="absolute left-0 top-[calc(100%+6px)] z-20 max-h-80 min-w-55 overflow-y-auto rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)] sm:left-auto sm:right-0">
                         <button wire:click="$set('authorFilter', '')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ !$authorFilter ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ __('All authors') }}</button>
                         @foreach ($this->authors as $author)
                             <button wire:click="$set('authorFilter', '{{ addslashes($author) }}')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ $authorFilter === $author ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ $author }}</button>
@@ -487,7 +487,7 @@ new #[Title('My Shelf')] class extends Component {
                             {{ __('Status') }}
                         @endif
                     </button>
-                    <div x-show="open" x-transition class="absolute right-0 top-[calc(100%+6px)] z-20 min-w-[180px] rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)]">
+                    <div x-show="open" x-transition class="absolute left-0 top-[calc(100%+6px)] z-20 min-w-45 rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)] sm:left-auto sm:right-0">
                         <button wire:click="$set('readingFilter', '')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ !$readingFilter ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ __('All statuses') }}</button>
                         @foreach ($this->readingStatuses as $status)
                             <button wire:click="$set('readingFilter', '{{ $status->id }}')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ $readingFilter == $status->id ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ ucfirst(str_replace('_', ' ', $status->name)) }}</button>
@@ -504,7 +504,7 @@ new #[Title('My Shelf')] class extends Component {
                         <flux:icon.bars-3-bottom-left class="size-3.5 text-muted" />
                         {{ __('Sort:') }} {{ match($sortBy) { 'title' => 'Title', 'author' => 'Author', 'rating' => 'Rating', default => 'Recent' } }}
                     </button>
-                    <div x-show="open" x-transition class="absolute right-0 top-[calc(100%+6px)] z-20 min-w-[150px] rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)]">
+                    <div x-show="open" x-transition class="absolute left-0 top-[calc(100%+6px)] z-20 min-w-37.5 rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)] sm:left-auto sm:right-0">
                         @foreach ([['recent','Recent'],['title','Title'],['author','Author'],['rating','Rating']] as [$val, $label])
                             <button wire:click="$set('sortBy', '{{ $val }}')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ $sortBy === $val ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ $label }}</button>
                         @endforeach

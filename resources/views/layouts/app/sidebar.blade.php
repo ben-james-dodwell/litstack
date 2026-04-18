@@ -118,6 +118,14 @@
                 <x-app-logo />
             </a>
 
+            {{-- Profile initials → settings --}}
+            @auth
+                <a href="{{ route('profile.edit') }}" wire:navigate
+                   class="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent-ink font-sans text-[12px] font-semibold tracking-wide text-card transition hover:opacity-80">
+                    {{ auth()->user()->initials() }}
+                </a>
+            @endauth
+
             {{-- Dropdown nav panel --}}
             <div
                 x-show="open"
@@ -155,27 +163,6 @@
                     <span class="ml-auto font-sans text-[12.5px] tabular-nums {{ request()->routeIs('books.shelf') && $ownedParam == $wishlistId ? 'text-accent-ink' : 'text-muted' }}">{{ $wishlistCount }}</span>
                 </a>
 
-                @auth
-                    <div class="mx-3 mt-2 border-t border-line pt-2">
-                        <a href="{{ route('profile.edit') }}" wire:navigate @click="open = false"
-                           class="flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-sans text-[14px] text-ink transition hover:bg-bg-3">
-                            <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-ink font-sans text-[11px] font-semibold text-card">
-                                {{ auth()->user()->initials() }}
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <p class="truncate font-sans text-[13px] font-medium text-ink">{{ auth()->user()->name }}</p>
-                                <p class="truncate font-sans text-[11px] text-muted">{{ auth()->user()->email }}</p>
-                            </div>
-                        </a>
-                        <form method="POST" action="{{ route('logout') }}" class="w-full">
-                            @csrf
-                            <button type="submit" class="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 font-sans text-[13px] text-muted transition hover:bg-bg-3 hover:text-ink">
-                                <flux:icon.arrow-right-start-on-rectangle class="size-4 shrink-0" />
-                                {{ __('Log out') }}
-                            </button>
-                        </form>
-                    </div>
-                @endauth
             </div>
         </flux:header>
 
