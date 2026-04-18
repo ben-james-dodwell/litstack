@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\BookFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -36,6 +37,16 @@ class Book extends Model
             'published_year' => 'integer',
             'page_count' => 'integer',
         ];
+    }
+
+    /** Falls back to Open Library ISBN cover when no URL is stored. */
+    protected function coverUrl(): Attribute
+    {
+        return Attribute::get(function (?string $value): ?string {
+            return $value
+                ?? ($this->isbn_13 ? "https://covers.openlibrary.org/b/isbn/{$this->isbn_13}-M.jpg" : null)
+                ?? ($this->isbn_10 ? "https://covers.openlibrary.org/b/isbn/{$this->isbn_10}-M.jpg" : null);
+        });
     }
 
     /** @return BelongsToMany<User, $this> */
