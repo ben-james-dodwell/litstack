@@ -1,0 +1,92 @@
+<?php
+
+use App\Models\Book;
+use App\Models\OwnershipStatus;
+use App\Models\ReadingStatus;
+use App\Models\User;
+use App\Models\UserBook;
+use Database\Seeders\OwnershipStatusSeeder;
+use Database\Seeders\ReadingStatusSeeder;
+use Livewire\Livewire;
+
+beforeEach(function () {
+    $this->seed([OwnershipStatusSeeder::class, ReadingStatusSeeder::class]);
+    $this->user = User::factory()->create();
+});
+
+test('guests are redirected to login', function () {
+    $this->get(route('books.shelf'))->assertRedirect(route('login'));
+});
+
+test('shelf displays user books', function () {
+    $book = Book::factory()->create(['title' => 'Dune']);
+    UserBook::factory()->create([
+        'user_id' => $this->user->id,
+        'book_id' => $book->id,
+        'ownership_status_id' => OwnershipStatus::where('name', 'owned')->first()->id,
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test('pages::books.shelf')
+        ->assertSee('Dune');
+});
+
+test('shelf does not show other users books', function () {
+    $other = User::factory()->create();
+    $book = Book::factory()->create(['title' => 'Secret Book']);
+    UserBook::factory()->create([
+        'user_id' => $other->id,
+        'book_id' => $book->id,
+        'ownership_status_id' => OwnershipStatus::where('name', 'owned')->first()->id,
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test('pages::books.shelf')
+        ->assertDontSee('Secret Book');
+});
+
+test('ownership filter shows only matching books', function () {
+    $owned    = OwnershipStatus::where('name', 'owned')->first();
+    $wishlist = OwnershipStatus::where('name', 'wishlist')->first();
+
+    $ownedBook    = Book::factory()->create(['title' => 'Owned Book']);
+    $wishlistBook = Book::factory()->create(['title' => 'Wishlist Book']);
+
+    UserBook::factory()->create(['user_id' => $this->user->id, 'book_id' => $ownedBook->id, 'ownership_status_id' => $owned->id]);
+    UserBook::factory()->create(['user_id' => $this->user->id, 'book_id' => $wishlistBook->id, 'ownership_status_id' => $wishlist->id]);
+
+    Livewire::actingAs($this->user)
+        ->test('pages::books.shelf')
+        ->set('ownershipFilter', (string) $owned->id)
+        ->assertSee('Owned Book')
+        ->assertDontSee('Wishlist Book');
+});
+
+test('reading status filter shows only matching books', function () {
+    $owned      = OwnershipStatus::where('name', 'owned')->first();
+    $inProgress = ReadingStatus::where('name', 'in_progress')->first();
+
+    $readingBook = Book::factory()->create(['title' => 'Currently Reading']);
+    $unreadBook  = Book::factory()->create(['title' => 'Not Started']);
+
+    UserBook::factory()->create(['user_id' => $this->user->id, 'book_id' => $readingBook->id, 'ownership_status_id' => $owned->id, 'reading_status_id' => $inProgress->id]);
+    UserBook::factory()->create(['user_id' => $this->user->id, 'book_id' => $unreadBook->id, 'ownership_status_id' => $owned->id]);
+
+    Livewire::actingAs($this->user)
+        ->test('pages::books.shelf')
+        ->set('readingFilter', (string) $inProgress->id)
+        ->assertSee('Currently Reading')
+        ->assertDontSee('Not Started');
+});
+
+test('clear filters resets all filters', function () {
+    $owned = OwnershipStatus::where('name', 'owned')->first();
+
+    Livewire::actingAs($this->user)
+        ->test('pages::books.shelf')
+        ->set('ownershipFilter', (string) $owned->id)
+        ->set('readingFilter', '1')
+        ->call('clearFilters')
+        ->assertSet('ownershipFilter', '')
+        ->assertSet('readingFilter', '');
+});

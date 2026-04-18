@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Review;
+use App\Models\UserBook;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -10,15 +11,12 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ReviewFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            //
+            'user_book_id' => UserBook::factory(),
+            'rating' => $this->faker->numberBetween(1, 5),
+            'body' => $this->faker->paragraph(),
         ];
     }
 }

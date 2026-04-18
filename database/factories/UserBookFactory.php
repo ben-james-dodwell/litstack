@@ -2,6 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Book;
+use App\Models\OwnershipStatus;
+use App\Models\User;
 use App\Models\UserBook;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -10,15 +13,15 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class UserBookFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            //
+            'user_id' => User::factory(),
+            'book_id' => Book::factory(),
+            'ownership_status_id' => fn () => OwnershipStatus::firstOrCreate(['name' => 'owned'])->id,
+            'reading_status_id' => null,
+            'started_at' => null,
+            'ended_at' => null,
         ];
     }
 }
