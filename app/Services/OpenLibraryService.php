@@ -65,6 +65,7 @@ class OpenLibraryService
             $response = Http::timeout(15)
                 ->get(self::BASE_URL.'/subjects/'.urlencode($subject).'.json', [
                     'limit' => $limit,
+                    'language' => 'eng',
                 ]);
 
             if (! $response->successful()) {

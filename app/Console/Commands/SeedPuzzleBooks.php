@@ -41,6 +41,10 @@ class SeedPuzzleBooks extends Command
                     continue;
                 }
 
+                if (! mb_detect_encoding($data['title'], 'ASCII', strict: true)) {
+                    continue;
+                }
+
                 $existed = PuzzleBook::where('open_library_id', $data['open_library_id'])->exists();
 
                 if ($existed) {

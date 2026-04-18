@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\PuzzleBook;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class PuzzleService
@@ -11,6 +12,8 @@ class PuzzleService
     private const EPOCH = '2026-01-01';
 
     private const MAX_ROUNDS = 9;
+
+    private const OFFSET_CACHE_KEY = 'puzzle_day_offset';
 
     public function todaysBook(): ?PuzzleBook
     {
@@ -20,9 +23,18 @@ class PuzzleService
             return null;
         }
 
-        $dayIndex = (int) Carbon::parse(self::EPOCH)->diffInDays(today()) % $total;
+        $base = (int) Carbon::parse(self::EPOCH)->diffInDays(today());
+        $offset = (int) Cache::get(self::OFFSET_CACHE_KEY, 0);
+
+        $dayIndex = ($base + $offset) % $total;
 
         return PuzzleBook::orderBy('id')->skip($dayIndex)->first();
+    }
+
+    public function advanceDayOffset(): void
+    {
+        $current = (int) Cache::get(self::OFFSET_CACHE_KEY, 0);
+        Cache::forever(self::OFFSET_CACHE_KEY, $current + 1);
     }
 
     public function maxRounds(): int
