@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use App\Observers\UserBookObserver;
 use Database\Factories\UserBookFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 #[Fillable(['user_id', 'book_id', 'ownership_status_id', 'reading_status_id', 'started_at', 'ended_at'])]
+#[ObservedBy(UserBookObserver::class)]
 class UserBook extends Pivot
 {
     /** @use HasFactory<UserBookFactory> */

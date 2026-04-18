@@ -42,11 +42,12 @@ class Book extends Model
     /** Falls back to Open Library ISBN cover when no URL is stored. */
     protected function coverUrl(): Attribute
     {
-        return Attribute::get(function (?string $value): ?string {
-            return $value
+        return Attribute::make(
+            get: fn (?string $value): ?string => $value
                 ?? ($this->isbn_13 ? "https://covers.openlibrary.org/b/isbn/{$this->isbn_13}-M.jpg" : null)
-                ?? ($this->isbn_10 ? "https://covers.openlibrary.org/b/isbn/{$this->isbn_10}-M.jpg" : null);
-        });
+                ?? ($this->isbn_10 ? "https://covers.openlibrary.org/b/isbn/{$this->isbn_10}-M.jpg" : null),
+            set: fn (?string $value): ?string => $value,
+        );
     }
 
     /** @return BelongsToMany<User, $this> */

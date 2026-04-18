@@ -265,9 +265,11 @@ new #[Title('My Shelf')] class extends Component {
 
     public function removePanelBookFromShelf(): void
     {
-        UserBook::where('id', $this->selectedUserBookId)
+        $userBook = UserBook::where('id', $this->selectedUserBookId)
             ->where('user_id', Auth::id())
-            ->delete();
+            ->firstOrFail();
+
+        $userBook->delete();
 
         $this->panelOpen = false;
         unset($this->userBooks, $this->selectedUserBook, $this->counts);
