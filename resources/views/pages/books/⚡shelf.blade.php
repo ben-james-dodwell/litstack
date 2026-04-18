@@ -391,17 +391,18 @@ new #[Title('My Shelf')] class extends Component {
 <div class="relative flex h-full w-full flex-1 flex-col overflow-hidden">
 
     {{-- ── Topbar ─────────────────────────────────────────────────────────── --}}
-    <div class="flex shrink-0 items-center gap-4 border-b border-line bg-bg px-8 py-[18px]">
+    <div class="flex shrink-0 items-center gap-3 border-b border-line bg-bg px-4 py-3 sm:gap-4 sm:px-8 sm:py-[18px]">
         <flux:button
             @click="$flux.modal('shelf-add-search').show()"
             variant="primary"
             icon="plus"
             class="shrink-0"
         >
-            {{ __('Add a book') }}
+            <span class="hidden sm:inline">{{ __('Add a book') }}</span>
+            <span class="sm:hidden">{{ __('Add') }}</span>
         </flux:button>
 
-        <div class="relative ml-auto w-80">
+        <div class="relative ml-auto w-full max-w-xs sm:max-w-80">
             <flux:input
                 wire:model.live.debounce.300ms="search"
                 icon="magnifying-glass"
@@ -412,11 +413,11 @@ new #[Title('My Shelf')] class extends Component {
     </div>
 
     {{-- ── Scrollable content ─────────────────────────────────────────────── --}}
-    <div class="flex-1 overflow-y-auto px-8 pb-16 pt-7">
+    <div class="flex-1 overflow-y-auto px-4 pb-10 pt-5 sm:px-8 sm:pb-16 sm:pt-7">
 
         {{-- Page head --}}
-        <div class="mb-6 flex flex-wrap items-end gap-3">
-            <h1 class="font-serif text-[38px] font-medium leading-tight tracking-[0.01em] text-ink">
+        <div class="mb-5 flex flex-wrap items-end gap-x-3 gap-y-2 sm:mb-6">
+            <h1 class="font-serif text-[26px] font-medium leading-tight tracking-[0.01em] text-ink sm:text-[38px]">
                 @if ($ownershipFilter)
                     @php $ownershipLabel = $this->ownershipStatuses->firstWhere('id', $ownershipFilter)?->name; @endphp
                     {{ ucfirst($ownershipLabel ?? 'Books') }}
@@ -434,7 +435,7 @@ new #[Title('My Shelf')] class extends Component {
             </span>
 
             {{-- Filter + sort pills --}}
-            <div class="ml-auto flex flex-wrap gap-2 pb-0.5">
+            <div class="flex w-full flex-wrap gap-2 pb-0.5 sm:ml-auto sm:w-auto">
 
                 {{-- Genre filter --}}
                 <div x-data="{ open: false }" class="relative" @click.outside="open = false">
@@ -515,7 +516,7 @@ new #[Title('My Shelf')] class extends Component {
 
         {{-- ── Book grid ───────────────────────────────────────────────────── --}}
         @if (count($this->userBooks) > 0)
-            <div class="grid grid-cols-2 gap-[22px] sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5.5 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 @foreach ($this->userBooks as $userBook)
                     @php
                         $palette  = $coverPalettes[$userBook->book->id % count($coverPalettes)];
@@ -529,10 +530,10 @@ new #[Title('My Shelf')] class extends Component {
                     <article
                         wire:click="openBook({{ $userBook->id }})"
                         wire:key="book-{{ $userBook->id }}"
-                        class="group flex cursor-pointer flex-col gap-3 rounded-[14px] border border-line bg-card p-[18px] transition duration-150 hover:-translate-y-px hover:border-line-2 hover:shadow-[0_10px_24px_-18px_rgba(40,30,10,0.25)]"
+                        class="group flex cursor-pointer flex-row items-start gap-3 rounded-[14px] border border-line bg-card p-3 transition duration-150 hover:border-line-2 hover:shadow-[0_4px_16px_-8px_rgba(40,30,10,0.15)] sm:flex-col sm:gap-3 sm:p-4.5 sm:hover:-translate-y-px sm:hover:shadow-[0_10px_24px_-18px_rgba(40,30,10,0.25)]"
                     >
                         {{-- Cover --}}
-                        <div class="aspect-[2/3] w-full overflow-hidden rounded-[4px] shadow-[0_1px_0_rgba(0,0,0,0.15),inset_2px_0_0_rgba(255,255,255,0.1),inset_-2px_0_0_rgba(0,0,0,0.15),inset_0_0_0_1px_rgba(0,0,0,0.08)]">
+                        <div class="aspect-[2/3] w-14 shrink-0 overflow-hidden rounded-sm shadow-[0_1px_0_rgba(0,0,0,0.15),inset_2px_0_0_rgba(255,255,255,0.1),inset_-2px_0_0_rgba(0,0,0,0.15),inset_0_0_0_1px_rgba(0,0,0,0.08)] sm:w-full">
                             @if ($userBook->book->cover_url)
                                 <img
                                     src="{{ $userBook->book->cover_url }}"
@@ -558,48 +559,50 @@ new #[Title('My Shelf')] class extends Component {
                             @endif
                         </div>
 
-                        {{-- Body --}}
-                        <div class="flex flex-1 flex-col gap-1">
-                            <h3 class="font-serif text-[17px] font-semibold leading-snug tracking-[0.005em] text-ink" style="text-wrap: balance">
-                                {{ $userBook->book->title }}
-                            </h3>
-                            @if ($userBook->book->author)
-                                <p class="font-sans text-[13px] text-muted">{{ $userBook->book->author }}</p>
-                            @endif
-
-                            @if ($firstGenre)
-                                <div class="mt-2">
-                                    <span class="rounded-full border border-line bg-bg-2 px-2 py-0.5 font-sans text-[11px] font-medium text-ink-2">
-                                        {{ $firstGenre }}
-                                    </span>
-                                </div>
-                            @endif
-                        </div>
-
-                        {{-- Footer --}}
-                        <div class="flex items-center justify-between gap-2 border-t border-line pt-2.5">
-                            @if ($userBook->review?->rating)
-                                <div class="flex gap-0.5">
-                                    @for ($i = 1; $i <= 5; $i++)
-                                        <flux:icon.star
-                                            variant="solid"
-                                            class="size-3 {{ $i <= $userBook->review->rating ? 'text-accent' : 'text-muted-2' }}"
-                                        />
-                                    @endfor
-                                </div>
-                            @else
-                                <span class="font-sans text-[11.5px] italic text-muted-2">Unrated</span>
-                            @endif
-
-                            <span class="font-sans text-[11px] text-muted">
-                                @if ($statusName === 'in_progress' && $started)
-                                    Began {{ $started }}
-                                @elseif ($statusName === 'completed' && $finished)
-                                    Finished {{ $finished }}
-                                @elseif ($statusName === 'abandoned')
-                                    Set aside
+                        {{-- Body + footer wrapper --}}
+                        <div class="flex min-w-0 flex-1 flex-col gap-1">
+                            <div class="flex flex-col gap-1">
+                                <h3 class="font-serif text-[15px] font-semibold leading-snug tracking-[0.005em] text-ink sm:text-[17px]" style="text-wrap: balance">
+                                    {{ $userBook->book->title }}
+                                </h3>
+                                @if ($userBook->book->author)
+                                    <p class="font-sans text-[12px] text-muted sm:text-[13px]">{{ $userBook->book->author }}</p>
                                 @endif
-                            </span>
+
+                                @if ($firstGenre)
+                                    <div class="mt-1 sm:mt-2">
+                                        <span class="rounded-full border border-line bg-bg-2 px-2 py-0.5 font-sans text-[11px] font-medium text-ink-2">
+                                            {{ $firstGenre }}
+                                        </span>
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- Footer --}}
+                            <div class="mt-auto flex items-center justify-between gap-2 border-t border-line pt-2 sm:pt-2.5">
+                                @if ($userBook->review?->rating)
+                                    <div class="flex gap-0.5">
+                                        @for ($i = 1; $i <= 5; $i++)
+                                            <flux:icon.star
+                                                variant="solid"
+                                                class="size-3 {{ $i <= $userBook->review->rating ? 'text-accent' : 'text-muted-2' }}"
+                                            />
+                                        @endfor
+                                    </div>
+                                @else
+                                    <span class="font-sans text-[11px] italic text-muted-2 sm:text-[11.5px]">Unrated</span>
+                                @endif
+
+                                <span class="font-sans text-[11px] text-muted">
+                                    @if ($statusName === 'in_progress' && $started)
+                                        Began {{ $started }}
+                                    @elseif ($statusName === 'completed' && $finished)
+                                        Finished {{ $finished }}
+                                    @elseif ($statusName === 'abandoned')
+                                        Set aside
+                                    @endif
+                                </span>
+                            </div>
                         </div>
                     </article>
                 @endforeach
@@ -634,12 +637,14 @@ new #[Title('My Shelf')] class extends Component {
     <div
         x-show="$wire.panelOpen"
         x-transition:enter="transition duration-250 ease-[cubic-bezier(0.2,0.9,0.3,1)]"
-        x-transition:enter-start="translate-x-full opacity-0"
-        x-transition:enter-end="translate-x-0 opacity-100"
+        x-transition:enter-start="max-lg:translate-y-full lg:translate-x-full opacity-0"
+        x-transition:enter-end="translate-y-0 translate-x-0 opacity-100"
         x-transition:leave="transition duration-200 ease-in"
-        x-transition:leave-start="translate-x-0 opacity-100"
-        x-transition:leave-end="translate-x-full opacity-0"
-        class="fixed bottom-0 right-0 top-0 z-50 flex w-[min(540px,96vw)] flex-col overflow-y-auto border-l border-line-2 bg-bg shadow-[-24px_0_60px_-24px_rgba(30,20,10,0.3)]"
+        x-transition:leave-start="translate-y-0 translate-x-0 opacity-100"
+        x-transition:leave-end="max-lg:translate-y-full lg:translate-x-full opacity-0"
+        class="fixed bottom-0 right-0 top-0 z-50 flex flex-col overflow-y-auto bg-bg
+               max-lg:left-0 max-lg:w-full max-lg:border-t max-lg:border-line-2 max-lg:shadow-[0_-8px_30px_-8px_rgba(30,20,10,0.2)]
+               lg:w-[min(540px,96vw)] lg:border-l lg:border-line-2 lg:shadow-[-24px_0_60px_-24px_rgba(30,20,10,0.3)]"
     >
         @if ($selectedUserBookId && $this->selectedUserBook)
             @php
@@ -675,7 +680,7 @@ new #[Title('My Shelf')] class extends Component {
             </div>
 
             {{-- Panel body --}}
-            <div class="flex-1 overflow-y-auto px-8 pb-10 pt-7">
+            <div class="flex-1 overflow-y-auto px-4 pb-8 pt-5 sm:px-8 sm:pb-10 sm:pt-7">
 
                 {{-- Hero --}}
                 <div class="mb-6 flex gap-6">

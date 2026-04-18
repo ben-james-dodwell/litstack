@@ -57,7 +57,7 @@ The app is available at **http://localhost:8000**.
 php artisan db:seed
 ```
 
-Creates a demo user (`demo@litstack.app` / `password`) with a pre-populated shelf of classic books.
+Creates a demo user (`demo@litstack.app` / `Passw0rd`) with a pre-populated shelf of classic books.
 
 ---
 

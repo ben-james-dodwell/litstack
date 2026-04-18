@@ -100,9 +100,12 @@
         {{-- Mobile header --}}
         <flux:header class="lg:hidden border-b border-line bg-bg-2">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
+            <a href="{{ route('books.shelf') }}" wire:navigate class="absolute left-1/2 -translate-x-1/2">
+                <x-app-logo />
+            </a>
             <flux:spacer />
             @auth
-                <flux:dropdown position="top" align="end">
+                <flux:dropdown position="bottom" align="end">
                     <flux:profile :initials="auth()->user()->initials()" icon-trailing="chevron-down" />
                     <flux:menu>
                         <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
