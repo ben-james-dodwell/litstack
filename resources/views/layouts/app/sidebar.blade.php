@@ -14,7 +14,7 @@
             $wishlistCount = auth()->check() ? auth()->user()->userBooks()->where('ownership_status_id', $wishlistId)->count() : 0;
         @endphp
 
-        {{-- Desktop sidebar (hidden on mobile — replaced by top-dropdown nav below) --}}
+        {{-- Desktop sidebar (hidden on mobile — mobile nav is in flux:header below) --}}
         <flux:sidebar sticky class="max-lg:hidden border-e border-line bg-bg-2">
 
             <flux:sidebar.header class="pb-4">
@@ -95,43 +95,28 @@
             @endauth
         </flux:sidebar>
 
-        {{-- Mobile header + dropdown nav --}}
-        <div
-            class="lg:hidden relative z-30"
+        {{-- Mobile header + dropdown nav (flux:header must be present for Flux's CSS grid to activate) --}}
+        <flux:header
+            class="lg:hidden relative border-b border-line bg-bg-2"
             x-data="{ open: false }"
             @click.outside="open = false"
             @keydown.escape.window="open = false"
         >
-            {{-- Header bar --}}
-            <div class="flex h-14 items-center border-b border-line bg-bg-2 px-4">
-                <button
-                    @click="open = !open"
-                    class="flex h-9 w-9 items-center justify-center rounded-lg text-ink-2 transition hover:bg-bg-3"
-                    :aria-expanded="open"
-                    aria-label="{{ __('Toggle navigation') }}"
-                >
-                    <flux:icon.bars-2 x-show="!open" class="size-5" />
-                    <flux:icon.x-mark x-show="open" class="size-5" />
-                </button>
+            {{-- Hamburger --}}
+            <button
+                @click="open = !open"
+                class="flex h-9 w-9 items-center justify-center rounded-lg text-ink-2 transition hover:bg-bg-3"
+                :aria-expanded="open"
+                aria-label="{{ __('Toggle navigation') }}"
+            >
+                <flux:icon.bars-2 x-show="!open" class="size-5" />
+                <flux:icon.x-mark x-show="open" class="size-5" />
+            </button>
 
-                <a href="{{ route('books.shelf') }}" wire:navigate @click="open = false" class="absolute left-1/2 -translate-x-1/2">
-                    <x-app-logo />
-                </a>
-
-                @auth
-                    <flux:dropdown position="bottom" align="end" class="ml-auto">
-                        <flux:profile :initials="auth()->user()->initials()" />
-                        <flux:menu>
-                            <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
-                            <flux:menu.separator />
-                            <form method="POST" action="{{ route('logout') }}" class="w-full">
-                                @csrf
-                                <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">{{ __('Log out') }}</flux:menu.item>
-                            </form>
-                        </flux:menu>
-                    </flux:dropdown>
-                @endauth
-            </div>
+            {{-- Centred logo --}}
+            <a href="{{ route('books.shelf') }}" wire:navigate @click="open = false" class="absolute left-1/2 -translate-x-1/2">
+                <x-app-logo />
+            </a>
 
             {{-- Dropdown nav panel --}}
             <div
@@ -142,7 +127,7 @@
                 x-transition:leave="transition duration-150 ease-in"
                 x-transition:leave-start="translate-y-0 opacity-100"
                 x-transition:leave-end="-translate-y-1 opacity-0"
-                class="absolute left-0 right-0 border-b border-line bg-bg-2 px-3 py-2 shadow-[0_8px_24px_-8px_rgba(30,20,10,0.15)]"
+                class="absolute left-0 right-0 top-full z-30 border-b border-line bg-bg-2 px-3 py-2 shadow-[0_8px_24px_-8px_rgba(30,20,10,0.15)]"
             >
                 <p class="px-3 pb-1.5 pt-0.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.07em] text-muted">Library</p>
 
@@ -169,8 +154,30 @@
                     {{ __('Wishlist') }}
                     <span class="ml-auto font-sans text-[12.5px] tabular-nums {{ request()->routeIs('books.shelf') && $ownedParam == $wishlistId ? 'text-accent-ink' : 'text-muted' }}">{{ $wishlistCount }}</span>
                 </a>
+
+                @auth
+                    <div class="mx-3 mt-2 border-t border-line pt-2">
+                        <a href="{{ route('profile.edit') }}" wire:navigate @click="open = false"
+                           class="flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-sans text-[14px] text-ink transition hover:bg-bg-3">
+                            <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-ink font-sans text-[11px] font-semibold text-card">
+                                {{ auth()->user()->initials() }}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate font-sans text-[13px] font-medium text-ink">{{ auth()->user()->name }}</p>
+                                <p class="truncate font-sans text-[11px] text-muted">{{ auth()->user()->email }}</p>
+                            </div>
+                        </a>
+                        <form method="POST" action="{{ route('logout') }}" class="w-full">
+                            @csrf
+                            <button type="submit" class="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2 font-sans text-[13px] text-muted transition hover:bg-bg-3 hover:text-ink">
+                                <flux:icon.arrow-right-start-on-rectangle class="size-4 shrink-0" />
+                                {{ __('Log out') }}
+                            </button>
+                        </form>
+                    </div>
+                @endauth
             </div>
-        </div>
+        </flux:header>
 
         {{ $slot }}
 
