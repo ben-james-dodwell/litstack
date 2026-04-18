@@ -532,7 +532,7 @@ new #[Title('My Shelf')] class extends Component {
                         class="group flex cursor-pointer flex-col gap-3 rounded-[14px] border border-line bg-card p-[18px] transition duration-150 hover:-translate-y-px hover:border-line-2 hover:shadow-[0_10px_24px_-18px_rgba(40,30,10,0.25)]"
                     >
                         {{-- Cover --}}
-                        <div class="aspect-[2/3] w-full overflow-hidden rounded-[4px] shadow-[0_1px_0_rgba(0,0,0,0.15),inset_2px_0_0_rgba(255,255,255,0.1),inset_-2px_0_0_rgba(0,0,0,0.15)]">
+                        <div class="aspect-[2/3] w-full overflow-hidden rounded-[4px] shadow-[0_1px_0_rgba(0,0,0,0.15),inset_2px_0_0_rgba(255,255,255,0.1),inset_-2px_0_0_rgba(0,0,0,0.15),inset_0_0_0_1px_rgba(0,0,0,0.08)]">
                             @if ($userBook->book->cover_url)
                                 <img
                                     src="{{ $userBook->book->cover_url }}"
@@ -680,7 +680,7 @@ new #[Title('My Shelf')] class extends Component {
                 {{-- Hero --}}
                 <div class="mb-6 flex gap-6">
                     {{-- Cover --}}
-                    <div class="aspect-[2/3] w-32 shrink-0 overflow-hidden rounded-[4px] shadow-[0_1px_0_rgba(0,0,0,0.15),inset_2px_0_0_rgba(255,255,255,0.1),inset_-2px_0_0_rgba(0,0,0,0.15),6px_8px_20px_-8px_rgba(30,20,10,0.3)]">
+                    <div class="aspect-[2/3] w-32 shrink-0 overflow-hidden rounded-[4px] shadow-[0_1px_0_rgba(0,0,0,0.15),inset_2px_0_0_rgba(255,255,255,0.1),inset_-2px_0_0_rgba(0,0,0,0.15),inset_0_0_0_1px_rgba(0,0,0,0.08),6px_8px_20px_-8px_rgba(30,20,10,0.3)]">
                         @if ($sbBook->cover_url)
                             <img src="{{ $sbBook->cover_url }}" alt="{{ $sbBook->title }}" class="h-full w-full object-cover" />
                         @else
@@ -842,8 +842,8 @@ new #[Title('My Shelf')] class extends Component {
     ></div>
 
     {{-- ── Add-book search modal ─────────────────────────────────────────────── --}}
-    <flux:modal name="shelf-add-search" class="max-w-3xl p-0">
-        <div class="border-b border-line px-5 py-4">
+    <flux:modal name="shelf-add-search" class="p-0" style="width: 780px; max-width: 100%">
+        <div class="px-5 py-4">
             <flux:input
                 wire:model.live.debounce.400ms="addQuery"
                 icon="magnifying-glass"
@@ -854,7 +854,7 @@ new #[Title('My Shelf')] class extends Component {
             />
         </div>
 
-        <div class="max-h-120 overflow-y-auto p-2">
+        <div class="{{ strlen(trim($addQuery)) >= 2 && count($this->addResults) > 0 ? 'border-t border-line' : '' }} max-h-120 overflow-y-auto p-2">
             @if (strlen(trim($addQuery)) >= 2)
                 @if (count($this->addResults) > 0)
                     @foreach ($this->addResults as $addBook)

@@ -55,70 +55,6 @@ class OpenLibraryService
     }
 
     /**
-     * Fetch books for a subject via the search API (richer data than subjects endpoint).
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public function searchBySubject(string $subject, int $limit = 50): array
-    {
-        try {
-            $response = Http::timeout(15)
-                ->get(self::BASE_URL.'/search.json', [
-                    'subject' => $subject,
-                    'language' => 'eng',
-                    'limit' => $limit,
-                    'fields' => implode(',', self::SEARCH_FIELDS),
-                ]);
-
-            if (! $response->successful()) {
-                return [];
-            }
-
-            return collect($response->json('docs', []))
-                ->map(fn (array $doc) => $this->normalise($doc))
-                ->filter(fn (array $book) => filled($book['title']) && filled($book['open_library_id']))
-                ->values()
-                ->all();
-
-        } catch (ConnectionException $e) {
-            Log::warning('Open Library searchBySubject failed', ['subject' => $subject, 'error' => $e->getMessage()]);
-
-            return [];
-        }
-    }
-
-    /**
-     * Fetch books for a subject (used for seeding puzzle candidates).
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public function fetchSubject(string $subject, int $limit = 50): array
-    {
-        try {
-            $response = Http::timeout(15)
-                ->get(self::BASE_URL.'/subjects/'.urlencode($subject).'.json', [
-                    'limit' => $limit,
-                    'language' => 'eng',
-                ]);
-
-            if (! $response->successful()) {
-                return [];
-            }
-
-            return collect($response->json('works', []))
-                ->map(fn (array $work) => $this->normaliseSubjectWork($work))
-                ->filter(fn (array $book) => filled($book['title']) && filled($book['open_library_id']))
-                ->values()
-                ->all();
-
-        } catch (ConnectionException $e) {
-            Log::warning('Open Library fetchSubject failed', ['subject' => $subject, 'error' => $e->getMessage()]);
-
-            return [];
-        }
-    }
-
-    /**
      * Fetch additional details (description, subjects) from the Works endpoint.
      *
      * @return array<string, mixed>
@@ -188,31 +124,6 @@ class OpenLibraryService
             'page_count' => $doc['number_of_pages_median'] ?? null,
             'publisher' => collect($doc['publisher'] ?? [])->first(),
             'genres' => collect($doc['subject'] ?? [])->take(5)->values()->all(),
-        ];
-    }
-
-    /**
-     * Normalise a work from the subjects API into a consistent shape.
-     *
-     * @param  array<string, mixed>  $work
-     * @return array<string, mixed>
-     */
-    private function normaliseSubjectWork(array $work): array
-    {
-        return [
-            'open_library_id' => $work['key'] ?? null,
-            'title' => $work['title'] ?? '',
-            'author' => collect($work['authors'] ?? [])->pluck('name')->first(),
-            'description' => null,
-            'published_year' => $work['first_publish_year'] ?? null,
-            'isbn_10' => null,
-            'isbn_13' => null,
-            'cover_url' => isset($work['cover_id'])
-                ? "https://covers.openlibrary.org/b/id/{$work['cover_id']}-M.jpg"
-                : null,
-            'page_count' => null,
-            'publisher' => null,
-            'genres' => collect($work['subject'] ?? [])->take(5)->values()->all(),
         ];
     }
 }
