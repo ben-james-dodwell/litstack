@@ -9,42 +9,70 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    /* Typography */
+    --font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-serif: 'Lora', 'Iowan Old Style', Georgia, serif;
+    --font-mono: 'Geist Mono', ui-monospace, Menlo, monospace;
 
-    --color-zinc-50: #fafafa;
-    --color-zinc-100: #f5f5f5;
-    --color-zinc-200: #e5e5e5;
-    --color-zinc-300: #d4d4d4;
-    --color-zinc-400: #a3a3a3;
-    --color-zinc-500: #737373;
-    --color-zinc-600: #525252;
-    --color-zinc-700: #404040;
-    --color-zinc-800: #262626;
-    --color-zinc-900: #171717;
-    --color-zinc-950: #0a0a0a;
+    /* Warm neutral palette */
+    --color-bg:     #faf6ef;
+    --color-bg-2:   #f3ede2;
+    --color-bg-3:   #ece3d2;
+    --color-card:   #fffdf9;
+    --color-ink:    #1f1a15;
+    --color-ink-2:  #3a322a;
+    --color-muted:  #8a7f72;
+    --color-muted-2: #b5aa9a;
+    --color-line:   #e8ddc9;
+    --color-line-2: #dccfb5;
 
-    --color-accent: var(--color-neutral-800);
-    --color-accent-content: var(--color-neutral-800);
-    --color-accent-foreground: var(--color-white);
+    /* Accent — warm orange (OKLCH) */
+    --color-accent:      oklch(62% 0.14 55);
+    --color-accent-ink:  oklch(40% 0.11 48);
+    --color-accent-soft: oklch(92% 0.04 70);
+
+    /* Semantic */
+    --color-ok:     oklch(55% 0.11 145);
+    --color-warn:   oklch(60% 0.13 45);
+    --color-danger: oklch(55% 0.17 28);
+
+    /* Flux component integration */
+    --color-accent-content:    oklch(62% 0.14 55);
+    --color-accent-foreground: #fffdf9;
 }
 
-@layer theme {
-    .dark {
-        --color-accent: var(--color-white);
-        --color-accent-content: var(--color-white);
-        --color-accent-foreground: var(--color-neutral-800);
-    }
+/* Override Flux's unlayered accent defaults — @theme sits in @layer theme which
+   loses to unlayered CSS, so we re-declare the accent vars outside any layer.
+   Also suppress Flux's .dark overrides since this app has no dark mode. */
+:root,
+.dark {
+    --color-accent:         oklch(62% 0.14 55);
+    --color-accent-ink:     oklch(40% 0.11 48);
+    --color-accent-soft:    oklch(92% 0.04 70);
+    --color-accent-content: oklch(62% 0.14 55);
+    --color-accent-foreground: #fffdf9;
+    --color-bg:     #faf6ef;
+    --color-bg-2:   #f3ede2;
+    --color-card:   #fffdf9;
+    --color-ink:    #1f1a15;
+    --color-muted:  #8a7f72;
 }
 
+/* Focus rings */
 @layer base {
-
     *,
     ::after,
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
+        border-color: var(--color-line, currentColor);
     }
+}
+
+input:focus[data-flux-control],
+textarea:focus[data-flux-control],
+select:focus[data-flux-control] {
+    @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-card;
 }
 
 [data-flux-field]:not(ui-radio, ui-checkbox) {
@@ -52,15 +80,50 @@
 }
 
 [data-flux-label] {
-    @apply  !mb-0 !leading-tight;
+    @apply !mb-0 !leading-tight;
 }
 
-input:focus[data-flux-control],
-textarea:focus[data-flux-control],
-select:focus[data-flux-control] {
-    @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
+/* ── Sidebar item active state override ── */
+[data-current] flux\:sidebar\.item,
+[aria-current="page"] {
+    background: var(--color-card) !important;
+    color: var(--color-accent-ink) !important;
+    font-weight: 600 !important;
+    border: 1px solid var(--color-line-2) !important;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.02) !important;
 }
 
-/* \[:where(&)\]:size-4 {
-    @apply size-4;
-} */
+/* ── Book cover placeholder ── */
+.cover-ph {
+    font-family: var(--font-serif);
+    line-height: 1.15;
+    background-image: repeating-linear-gradient(
+        135deg,
+        rgba(255,255,255,0.04) 0 1px,
+        transparent 1px 7px
+    );
+}
+
+/* ── Detail panel slide transition ── */
+.panel-slide-enter {
+    transform: translateX(100%);
+    opacity: 0;
+}
+.panel-slide-enter-active {
+    transition: transform 250ms cubic-bezier(0.2, 0.9, 0.3, 1), opacity 150ms ease;
+}
+.panel-slide-enter-to {
+    transform: translateX(0);
+    opacity: 1;
+}
+.panel-slide-leave {
+    transform: translateX(0);
+    opacity: 1;
+}
+.panel-slide-leave-active {
+    transition: transform 200ms ease-in, opacity 150ms ease;
+}
+.panel-slide-leave-to {
+    transform: translateX(100%);
+    opacity: 0;
+}
