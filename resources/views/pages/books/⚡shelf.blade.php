@@ -842,7 +842,7 @@ new #[Title('My Shelf')] class extends Component {
     ></div>
 
     {{-- ── Add-book search modal ─────────────────────────────────────────────── --}}
-    <flux:modal name="shelf-add-search" class="max-w-2xl p-0">
+    <flux:modal name="shelf-add-search" class="max-w-3xl p-0">
         <div class="border-b border-line px-5 py-4">
             <flux:input
                 wire:model.live.debounce.400ms="addQuery"
@@ -894,10 +894,6 @@ new #[Title('My Shelf')] class extends Component {
                         No results for "<em class="font-serif text-ink-2">{{ trim($addQuery) }}</em>"
                     </div>
                 @endif
-            @else
-                <div class="px-4 pb-2 pt-4 font-sans text-[11.5px] font-medium text-muted">
-                    {{ __('Suggested · based on your shelf') }}
-                </div>
             @endif
         </div>
     </flux:modal>
