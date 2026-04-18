@@ -11,12 +11,6 @@
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Platform')" class="grid">
-                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
-                    </flux:sidebar.item>
-                </flux:sidebar.group>
-
                 <flux:sidebar.group :heading="__('Books')" class="grid">
                     <flux:sidebar.item icon="book-open" :href="route('books.shelf')" :current="request()->routeIs('books.shelf')" wire:navigate>
                         {{ __('My Shelf') }}
