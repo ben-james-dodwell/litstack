@@ -168,6 +168,7 @@ class OpenLibraryService
             'open_library_id' => $work['key'] ?? null,
             'title' => $work['title'] ?? '',
             'author' => collect($work['authors'] ?? [])->pluck('name')->first(),
+            'description' => null,
             'published_year' => $work['first_publish_year'] ?? null,
             'isbn_10' => null,
             'isbn_13' => null,
