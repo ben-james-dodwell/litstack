@@ -175,5 +175,13 @@
         @endpersist
 
         @fluxScripts
+        <script>
+            document.addEventListener('livewire:init', () => {
+                Livewire.hook('request', ({ options }) => {
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    if (token) options.headers['X-CSRF-TOKEN'] = token;
+                });
+            });
+        </script>
     </body>
 </html>
