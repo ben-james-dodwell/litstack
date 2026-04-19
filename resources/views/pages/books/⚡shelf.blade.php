@@ -182,6 +182,7 @@ new #[Title('My Shelf')] class extends Component {
         }
 
         return UserBook::with(['book', 'ownershipStatus', 'readingStatus', 'review'])
+            ->where('user_id', Auth::id())
             ->find($this->selectedUserBookId);
     }
 
@@ -232,6 +233,8 @@ new #[Title('My Shelf')] class extends Component {
 
     public function setPanelRating(int $rating): void
     {
+        abort_unless($this->selectedUserBook !== null, 403);
+
         $this->panelRating = $this->panelRating === $rating ? 0 : $rating;
 
         Review::updateOrCreate(
@@ -244,6 +247,8 @@ new #[Title('My Shelf')] class extends Component {
 
     public function savePanelReview(): void
     {
+        abort_unless($this->selectedUserBook !== null, 403);
+
         Review::updateOrCreate(
             ['user_book_id' => $this->selectedUserBookId],
             ['rating' => $this->panelRating ?: null, 'body' => $this->panelReviewBody ?: null],
@@ -255,7 +260,9 @@ new #[Title('My Shelf')] class extends Component {
 
     private function savePanelShelfEntry(): void
     {
-        UserBook::where('id', $this->selectedUserBookId)->update([
+        UserBook::where('id', $this->selectedUserBookId)
+            ->where('user_id', Auth::id())
+            ->update([
             'ownership_status_id' => $this->panelOwnershipStatusId ?: null,
             'reading_status_id'   => $this->panelReadingStatusId ?: null,
             'started_at'          => $this->panelStartedAt ?: null,
@@ -361,16 +368,6 @@ new #[Title('My Shelf')] class extends Component {
         $this->addSelectedOpenLibraryId = null;
         unset($this->addResults, $this->addUserBookIds, $this->userBooks, $this->counts);
         Flux::toast(variant: 'success', text: __('Book added to your shelf.'));
-    }
-
-    public function resetFilters(): void
-    {
-        $this->genreFilter   = '';
-        $this->authorFilter  = '';
-        $this->readingFilter = '';
-        $this->search        = '';
-        $this->sortBy        = 'recent';
-        unset($this->userBooks, $this->counts);
     }
 
     private function looksLikeIsbn(string $query): bool
@@ -535,6 +532,8 @@ new #[Title('My Shelf')] class extends Component {
                 <div x-data="{ open: false }" class="relative" @click.outside="open = false">
                     <button
                         @click="open = !open"
+                        :aria-expanded="open"
+                        aria-haspopup="listbox"
                         class="flex items-center gap-1.5 rounded-full border px-3 py-[7px] font-sans text-[12.5px] font-medium transition
                             {{ $genreFilter ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line bg-card text-ink-2 hover:border-line-2' }}"
                     >
@@ -553,6 +552,8 @@ new #[Title('My Shelf')] class extends Component {
                 <div x-data="{ open: false }" class="relative" @click.outside="open = false">
                     <button
                         @click="open = !open"
+                        :aria-expanded="open"
+                        aria-haspopup="listbox"
                         class="flex items-center gap-1.5 rounded-full border px-3 py-[7px] font-sans text-[12.5px] font-medium transition
                             {{ $authorFilter ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line bg-card text-ink-2 hover:border-line-2' }}"
                     >
@@ -571,6 +572,8 @@ new #[Title('My Shelf')] class extends Component {
                 <div x-data="{ open: false }" class="relative" @click.outside="open = false">
                     <button
                         @click="open = !open"
+                        :aria-expanded="open"
+                        aria-haspopup="listbox"
                         class="flex items-center gap-1.5 rounded-full border px-3 py-[7px] font-sans text-[12.5px] font-medium transition
                             {{ $readingFilter ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line bg-card text-ink-2 hover:border-line-2' }}"
                     >
@@ -593,6 +596,9 @@ new #[Title('My Shelf')] class extends Component {
                 <div x-data="{ open: false }" class="relative" @click.outside="open = false">
                     <button
                         @click="open = !open"
+                        :aria-expanded="open"
+                        aria-haspopup="listbox"
+                        aria-label="{{ __('Sort:') }} {{ match($sortBy) { 'title' => 'Title', 'author' => 'Author', 'rating' => 'Rating', default => 'Recent' } }}"
                         class="flex items-center gap-1.5 rounded-full border px-3 py-[7px] font-sans text-[12.5px] font-medium transition
                             {{ $sortBy !== 'recent' ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line bg-card text-ink-2 hover:border-line-2' }}"
                     >
@@ -609,11 +615,12 @@ new #[Title('My Shelf')] class extends Component {
                 {{-- Reset filters --}}
                 @if ($genreFilter || $authorFilter || $readingFilter || $search || $sortBy !== 'recent')
                     <button
-                        wire:click="resetFilters"
+                        wire:click="clearFilters"
+                        aria-label="{{ __('Reset all filters') }}"
                         class="flex items-center gap-1.5 rounded-full border border-line bg-card px-3 py-[7px] font-sans text-[12.5px] font-medium text-ink-2 transition hover:border-danger hover:text-danger"
                     >
                         <flux:icon.x-mark class="size-3.5 text-muted" />
-                        <span class="hidden sm:inline">{{ __('Reset') }}</span>
+                        <span class="hidden sm:inline" aria-hidden="true">{{ __('Reset') }}</span>
                     </button>
                 @endif
 
@@ -636,6 +643,11 @@ new #[Title('My Shelf')] class extends Component {
                     <article
                         wire:click="openBook({{ $userBook->id }})"
                         wire:key="book-{{ $userBook->id }}"
+                        tabindex="0"
+                        role="button"
+                        aria-label="{{ $userBook->book->title }}{{ $userBook->book->author ? ' by ' . $userBook->book->author : '' }}"
+                        @keydown.enter="$wire.openBook({{ $userBook->id }})"
+                        @keydown.space.prevent="$wire.openBook({{ $userBook->id }})"
                         class="group flex cursor-pointer flex-row items-start gap-3 rounded-[14px] border border-line bg-card p-3 transition duration-150 hover:border-line-2 hover:shadow-[0_4px_16px_-8px_rgba(40,30,10,0.15)] sm:flex-col sm:gap-3 sm:p-4.5 sm:hover:-translate-y-px sm:hover:shadow-[0_10px_24px_-18px_rgba(40,30,10,0.25)]"
                     >
                         {{-- Cover --}}
@@ -899,6 +911,7 @@ new #[Title('My Shelf')] class extends Component {
                         @for ($i = 1; $i <= 5; $i++)
                             <button
                                 type="button"
+                                aria-label="{{ $i }} {{ $i === 1 ? 'star' : 'stars' }}"
                                 @mouseenter="hovered = {{ $i }}"
                                 @mouseleave="hovered = 0"
                                 wire:click="setPanelRating({{ $i }})"

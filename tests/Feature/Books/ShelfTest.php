@@ -46,10 +46,10 @@ test('shelf does not show other users books', function () {
 });
 
 test('ownership filter shows only matching books', function () {
-    $owned    = OwnershipStatus::where('name', 'owned')->first();
+    $owned = OwnershipStatus::where('name', 'owned')->first();
     $wishlist = OwnershipStatus::where('name', 'wishlist')->first();
 
-    $ownedBook    = Book::factory()->create(['title' => 'Owned Book']);
+    $ownedBook = Book::factory()->create(['title' => 'Owned Book']);
     $wishlistBook = Book::factory()->create(['title' => 'Wishlist Book']);
 
     UserBook::factory()->create(['user_id' => $this->user->id, 'book_id' => $ownedBook->id, 'ownership_status_id' => $owned->id]);
@@ -63,11 +63,11 @@ test('ownership filter shows only matching books', function () {
 });
 
 test('reading status filter shows only matching books', function () {
-    $owned      = OwnershipStatus::where('name', 'owned')->first();
+    $owned = OwnershipStatus::where('name', 'owned')->first();
     $inProgress = ReadingStatus::where('name', 'in_progress')->first();
 
     $readingBook = Book::factory()->create(['title' => 'Currently Reading']);
-    $unreadBook  = Book::factory()->create(['title' => 'Not Started']);
+    $unreadBook = Book::factory()->create(['title' => 'Not Started']);
 
     UserBook::factory()->create(['user_id' => $this->user->id, 'book_id' => $readingBook->id, 'ownership_status_id' => $owned->id, 'reading_status_id' => $inProgress->id]);
     UserBook::factory()->create(['user_id' => $this->user->id, 'book_id' => $unreadBook->id, 'ownership_status_id' => $owned->id]);
@@ -86,7 +86,36 @@ test('clear filters resets all filters', function () {
         ->test('pages::books.shelf')
         ->set('ownershipFilter', (string) $owned->id)
         ->set('readingFilter', '1')
+        ->set('genreFilter', 'Fantasy')
+        ->set('authorFilter', 'Tolkien')
+        ->set('sortBy', 'title_asc')
         ->call('clearFilters')
         ->assertSet('ownershipFilter', '')
-        ->assertSet('readingFilter', '');
+        ->assertSet('readingFilter', '')
+        ->assertSet('genreFilter', '')
+        ->assertSet('authorFilter', '')
+        ->assertSet('sortBy', 'recent');
+});
+
+test('savePanelShelfEntry cannot update another users book', function () {
+    $owned = OwnershipStatus::where('name', 'owned')->first();
+    $other = User::factory()->create();
+
+    $book = Book::factory()->create();
+    $otherBook = UserBook::factory()->create([
+        'user_id' => $other->id,
+        'book_id' => $book->id,
+        'ownership_status_id' => $owned->id,
+    ]);
+
+    $originalOwnershipId = $otherBook->ownership_status_id;
+
+    $wishlist = OwnershipStatus::where('name', 'wishlist')->first();
+
+    Livewire::actingAs($this->user)
+        ->test('pages::books.shelf')
+        ->set('selectedUserBookId', $otherBook->id)
+        ->set('panelOwnershipStatusId', (string) $wishlist->id);
+
+    expect($otherBook->fresh()->ownership_status_id)->toBe($originalOwnershipId);
 });

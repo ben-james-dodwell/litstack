@@ -49,6 +49,18 @@
             </div>
         </form>
 
+        @if (config('demo.enabled') && config('demo.email'))
+            <div class="relative flex items-center">
+                <div class="flex-1 border-t border-line"></div>
+                <span class="px-3 font-sans text-[12px] text-muted">{{ __('or') }}</span>
+                <div class="flex-1 border-t border-line"></div>
+            </div>
+
+            <flux:button :href="route('demo.login')" wire:navigate class="w-full">
+                {{ __('Continue as demo user') }}
+            </flux:button>
+        @endif
+
         @if (Route::has('register'))
             <div class="space-x-1 text-sm text-center rtl:space-x-reverse text-zinc-600 dark:text-zinc-400">
                 <span>{{ __('Don\'t have an account?') }}</span>

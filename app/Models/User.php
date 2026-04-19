@@ -61,6 +61,13 @@ class User extends Authenticatable
         ];
     }
 
+    public function isDemoAccount(): bool
+    {
+        $demoEmail = config('demo.email');
+
+        return $demoEmail && $this->email === $demoEmail;
+    }
+
     /**
      * Get the user's initials
      */

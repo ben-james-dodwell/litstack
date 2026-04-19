@@ -1,9 +1,13 @@
 <?php
 
+use App\Http\Controllers\DemoLoginController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 
+Route::get('/demo-login', DemoLoginController::class)
+    ->middleware('throttle:10,1')
+    ->name('demo.login');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('dashboard', '/books/shelf')->name('dashboard');

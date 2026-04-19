@@ -46,6 +46,7 @@ new #[Title('Security settings')] class extends Component {
      */
     public function updatePassword(): void
     {
+        abort_if(auth()->user()->isDemoAccount(), 403);
         try {
             $validated = $this->validate([
                 'current_password' => $this->currentPasswordRules(),
@@ -80,6 +81,8 @@ new #[Title('Security settings')] class extends Component {
      */
     public function disable(DisableTwoFactorAuthentication $disableTwoFactorAuthentication): void
     {
+        abort_if(auth()->user()->isDemoAccount(), 403);
+
         $disableTwoFactorAuthentication(auth()->user());
 
         $this->twoFactorEnabled = false;
@@ -92,6 +95,11 @@ new #[Title('Security settings')] class extends Component {
     <flux:heading class="sr-only">{{ __('Security settings') }}</flux:heading>
 
     <x-pages::settings.layout :heading="__('Update password')" :subheading="__('Ensure your account is using a long, random password to stay secure')">
+        @if (auth()->user()->isDemoAccount())
+            <flux:callout icon="information-circle" class="mt-6">
+                {{ __('Password and two-factor authentication settings are disabled for the demo account.') }}
+            </flux:callout>
+        @else
         <form method="POST" wire:submit="updatePassword" class="mt-6 space-y-6">
             <flux:input
                 wire:model="current_password"
@@ -125,7 +133,9 @@ new #[Title('Security settings')] class extends Component {
             </div>
         </form>
 
-        @if ($canManageTwoFactor)
+        @endif {{-- /isDemoAccount --}}
+
+        @if ($canManageTwoFactor && ! auth()->user()->isDemoAccount())
             <section class="mt-12">
                 <flux:heading>{{ __('Two-factor authentication') }}</flux:heading>
                 <flux:subheading>{{ __('Manage your two-factor authentication settings') }}</flux:subheading>
