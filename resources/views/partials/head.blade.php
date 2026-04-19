@@ -3,7 +3,7 @@
 <meta name="csrf-token" content="{{ csrf_token() }}" />
 
 <title>
-    {{ filled($title ?? null) ? $title.' - '.config('app.name', 'Litstack') : config('app.name', 'Litstack') }}
+    {{ filled($title ?? null) ? config('app.name', 'Litstack').' - '.$title : config('app.name', 'Litstack') }}
 </title>
 
 <link rel="icon" href="/favicon.ico" sizes="any">

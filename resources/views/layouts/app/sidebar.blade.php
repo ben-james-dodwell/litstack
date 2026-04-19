@@ -149,12 +149,14 @@
                         <flux:icon.cog class="size-4 shrink-0 {{ request()->routeIs('profile.edit') ? 'text-accent-ink' : 'text-muted' }}" />
                         {{ __('Profile') }}
                     </a>
-                    <a href="{{ route('security.edit') }}" wire:navigate @click="userOpen = false"
-                       class="flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-sans text-[14px] transition hover:bg-bg-3
-                              {{ request()->routeIs('security.edit') ? 'border border-line-2 bg-card font-semibold text-accent-ink' : 'text-ink' }}">
-                        <flux:icon.lock-closed class="size-4 shrink-0 {{ request()->routeIs('security.edit') ? 'text-accent-ink' : 'text-muted' }}" />
-                        {{ __('Security') }}
-                    </a>
+                    @if (! auth()->user()->isDemoAccount())
+                        <a href="{{ route('security.edit') }}" wire:navigate @click="userOpen = false"
+                           class="flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-sans text-[14px] transition hover:bg-bg-3
+                                  {{ request()->routeIs('security.edit') ? 'border border-line-2 bg-card font-semibold text-accent-ink' : 'text-ink' }}">
+                            <flux:icon.lock-closed class="size-4 shrink-0 {{ request()->routeIs('security.edit') ? 'text-accent-ink' : 'text-muted' }}" />
+                            {{ __('Security') }}
+                        </a>
+                    @endif
                     <div class="mt-1 border-t border-line pt-1">
                         <form method="POST" action="{{ route('logout') }}" class="w-full">
                             @csrf

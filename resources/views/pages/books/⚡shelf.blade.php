@@ -59,7 +59,14 @@ new class extends Component {
 
     // ── Page title ────────────────────────────────────────────────────────────
 
-    public function getTitle(): string
+    public string $pageTitle = 'Litstack - All Books';
+
+    public function rendering(): void
+    {
+        $this->pageTitle = $this->buildPageTitle();
+    }
+
+    private function buildPageTitle(): string
     {
         if ($this->panelOpen && $this->selectedUserBook) {
             $book   = $this->selectedUserBook->book;
@@ -425,6 +432,7 @@ new class extends Component {
     class="relative flex h-full w-full flex-1 flex-col overflow-hidden"
     x-data="{ addSearchOpen: false }"
     @close-add-search.window="addSearchOpen = false"
+    x-effect="document.title = $wire.pageTitle"
 >
 
     {{-- ── Topbar ─────────────────────────────────────────────────────────── --}}

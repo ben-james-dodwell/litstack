@@ -28,6 +28,8 @@ new #[Title('Profile settings')] class extends Component {
      */
     public function updateProfileInformation(): void
     {
+        abort_if(Auth::user()->isDemoAccount(), 403);
+
         $user = Auth::user();
 
         $validated = $this->validate($this->profileRules($user->id));
@@ -81,11 +83,17 @@ new #[Title('Profile settings')] class extends Component {
     <flux:heading class="sr-only">{{ __('Profile settings') }}</flux:heading>
 
     <x-pages::settings.layout :heading="__('Profile')" :subheading="__('Update your name and email address')">
+        @if (auth()->user()->isDemoAccount())
+            <flux:callout icon="information-circle" class="mt-6">
+                {{ __('Profile changes are disabled for the demo account.') }}
+            </flux:callout>
+        @endif
+
         <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
-            <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
+            <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" :disabled="auth()->user()->isDemoAccount()" />
 
             <div>
-                <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
+                <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" :disabled="auth()->user()->isDemoAccount()" />
 
                 @if ($this->hasUnverifiedEmail)
                     <div>
@@ -101,14 +109,16 @@ new #[Title('Profile settings')] class extends Component {
                 @endif
             </div>
 
-            <div class="flex items-center gap-4">
-                <flux:button variant="primary" type="submit" data-test="update-profile-button">
-                    {{ __('Save') }}
-                </flux:button>
-            </div>
+            @if (! auth()->user()->isDemoAccount())
+                <div class="flex items-center gap-4">
+                    <flux:button variant="primary" type="submit" data-test="update-profile-button">
+                        {{ __('Save') }}
+                    </flux:button>
+                </div>
+            @endif
         </form>
 
-        @if ($this->showDeleteUser)
+        @if ($this->showDeleteUser && ! auth()->user()->isDemoAccount())
             <livewire:pages::settings.delete-user-form />
         @endif
     </x-pages::settings.layout>
