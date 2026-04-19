@@ -10,11 +10,10 @@ use App\Services\OpenLibraryService;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
-new #[Title('My Shelf')] class extends Component {
+new class extends Component {
     // ── Shelf filters ──────────────────────────────────────────────────────────
     #[Url(as: 'q')]
     public string $search = '';
@@ -57,6 +56,31 @@ new #[Title('My Shelf')] class extends Component {
     public ?string $addSelectedOpenLibraryId = null;
 
     public int $addOwnershipStatusId = 0;
+
+    // ── Page title ────────────────────────────────────────────────────────────
+
+    public function getTitle(): string
+    {
+        if ($this->panelOpen && $this->selectedUserBook) {
+            $book   = $this->selectedUserBook->book;
+            $suffix = $book->author ? "{$book->title} by {$book->author}" : $book->title;
+
+            return "Litstack - {$suffix}";
+        }
+
+        if (filled($this->ownershipFilter)) {
+            $name   = OwnershipStatus::find($this->ownershipFilter)?->name;
+            $suffix = match ($name) {
+                'owned'    => 'Owned Books',
+                'wishlist' => 'Wishlist',
+                default    => 'All Books',
+            };
+
+            return "Litstack - {$suffix}";
+        }
+
+        return 'Litstack - All Books';
+    }
 
     // ── Computed: shelf ────────────────────────────────────────────────────────
 
