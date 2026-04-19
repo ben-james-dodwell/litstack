@@ -355,6 +355,7 @@ new #[Title('My Shelf')] class extends Component {
         );
 
         Flux::modal('shelf-add-confirm')->close();
+        Flux::modal('shelf-add-search')->close();
         $this->addQuery                 = '';
         $this->addSelectedOpenLibraryId = null;
         unset($this->addResults, $this->addUserBookIds, $this->userBooks, $this->counts);
