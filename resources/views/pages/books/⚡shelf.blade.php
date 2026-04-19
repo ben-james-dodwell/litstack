@@ -363,6 +363,16 @@ new #[Title('My Shelf')] class extends Component {
         Flux::toast(variant: 'success', text: __('Book added to your shelf.'));
     }
 
+    public function resetFilters(): void
+    {
+        $this->genreFilter   = '';
+        $this->authorFilter  = '';
+        $this->readingFilter = '';
+        $this->search        = '';
+        $this->sortBy        = 'recent';
+        unset($this->userBooks, $this->counts);
+    }
+
     private function looksLikeIsbn(string $query): bool
     {
         $clean = preg_replace('/[\s\-]/', '', $query);
@@ -399,25 +409,19 @@ new #[Title('My Shelf')] class extends Component {
     {{-- ── Topbar ─────────────────────────────────────────────────────────── --}}
     <div class="flex shrink-0 items-center gap-3 border-b border-line bg-bg px-4 py-3 sm:gap-4 sm:px-8 sm:py-[18px]">
         {{-- Mobile: opens inline panel --}}
-        <flux:button
-            @click="addSearchOpen = true"
-            variant="primary"
-            icon="plus"
-            class="shrink-0 lg:hidden"
-        >
-            <span class="max-sm:hidden">{{ __('Add a book') }}</span>
-            <span class="sm:hidden">{{ __('Add') }}</span>
-        </flux:button>
+        <div class="shrink-0 lg:hidden">
+            <flux:button @click="addSearchOpen = true" variant="primary" icon="plus">
+                <span class="max-sm:hidden">{{ __('Add a book') }}</span>
+                <span class="sm:hidden">{{ __('Add') }}</span>
+            </flux:button>
+        </div>
 
         {{-- Desktop: opens modal --}}
-        <flux:button
-            @click="$flux.modal('shelf-add-search').show()"
-            variant="primary"
-            icon="plus"
-            class="shrink-0 hidden lg:flex"
-        >
-            {{ __('Add a book') }}
-        </flux:button>
+        <div class="hidden shrink-0 lg:block">
+            <flux:button @click="$flux.modal('shelf-add-search').show()" variant="primary" icon="plus">
+                {{ __('Add a book') }}
+            </flux:button>
+        </div>
 
         <div class="relative ml-auto w-full max-w-xs sm:max-w-80">
             <flux:input
@@ -535,7 +539,7 @@ new #[Title('My Shelf')] class extends Component {
                             {{ $genreFilter ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line bg-card text-ink-2 hover:border-line-2' }}"
                     >
                         <flux:icon.funnel class="size-3.5 {{ $genreFilter ? 'text-accent-ink' : 'text-muted' }}" />
-                        {{ $genreFilter ?: __('Genre') }}
+                        <span class="hidden sm:inline">{{ $genreFilter ?: __('Genre') }}</span>
                     </button>
                     <div x-show="open" x-transition class="absolute left-0 top-[calc(100%+6px)] z-20 max-h-80 min-w-50 overflow-y-auto rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)] sm:left-auto sm:right-0">
                         <button wire:click="$set('genreFilter', '')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ !$genreFilter ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ __('All genres') }}</button>
@@ -553,7 +557,7 @@ new #[Title('My Shelf')] class extends Component {
                             {{ $authorFilter ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line bg-card text-ink-2 hover:border-line-2' }}"
                     >
                         <flux:icon.funnel class="size-3.5 {{ $authorFilter ? 'text-accent-ink' : 'text-muted' }}" />
-                        {{ $authorFilter ?: __('Author') }}
+                        <span class="hidden sm:inline">{{ $authorFilter ?: __('Author') }}</span>
                     </button>
                     <div x-show="open" x-transition class="absolute left-0 top-[calc(100%+6px)] z-20 max-h-80 min-w-55 overflow-y-auto rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)] sm:left-auto sm:right-0">
                         <button wire:click="$set('authorFilter', '')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ !$authorFilter ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ __('All authors') }}</button>
@@ -571,11 +575,13 @@ new #[Title('My Shelf')] class extends Component {
                             {{ $readingFilter ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line bg-card text-ink-2 hover:border-line-2' }}"
                     >
                         <flux:icon.funnel class="size-3.5 {{ $readingFilter ? 'text-accent-ink' : 'text-muted' }}" />
-                        @if ($readingFilter)
-                            {{ ucfirst(str_replace('_', ' ', $this->readingStatuses->firstWhere('id', $readingFilter)?->name ?? 'Status')) }}
-                        @else
-                            {{ __('Status') }}
-                        @endif
+                        <span class="hidden sm:inline">
+                            @if ($readingFilter)
+                                {{ ucfirst(str_replace('_', ' ', $this->readingStatuses->firstWhere('id', $readingFilter)?->name ?? 'Status')) }}
+                            @else
+                                {{ __('Status') }}
+                            @endif
+                        </span>
                     </button>
                     <div x-show="open" x-transition class="absolute left-0 top-[calc(100%+6px)] z-20 min-w-45 rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)] sm:left-auto sm:right-0">
                         <button wire:click="$set('readingFilter', '')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ !$readingFilter ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ __('All statuses') }}</button>
@@ -589,10 +595,11 @@ new #[Title('My Shelf')] class extends Component {
                 <div x-data="{ open: false }" class="relative" @click.outside="open = false">
                     <button
                         @click="open = !open"
-                        class="flex items-center gap-1.5 rounded-full border border-line bg-card px-3 py-[7px] font-sans text-[12.5px] font-medium text-ink-2 transition hover:border-line-2"
+                        class="flex items-center gap-1.5 rounded-full border px-3 py-[7px] font-sans text-[12.5px] font-medium transition
+                            {{ $sortBy !== 'recent' ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line bg-card text-ink-2 hover:border-line-2' }}"
                     >
-                        <flux:icon.bars-3-bottom-left class="size-3.5 text-muted" />
-                        {{ __('Sort:') }} {{ match($sortBy) { 'title' => 'Title', 'author' => 'Author', 'rating' => 'Rating', default => 'Recent' } }}
+                        <flux:icon.arrows-up-down class="size-3.5 {{ $sortBy !== 'recent' ? 'text-accent-ink' : 'text-muted' }}" />
+                        <span class="hidden sm:inline">{{ __('Sort:') }} {{ match($sortBy) { 'title' => 'Title', 'author' => 'Author', 'rating' => 'Rating', default => 'Recent' } }}</span>
                     </button>
                     <div x-show="open" x-transition class="absolute left-0 top-[calc(100%+6px)] z-20 min-w-37.5 rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)] sm:left-auto sm:right-0">
                         @foreach ([['recent','Recent'],['title','Title'],['author','Author'],['rating','Rating']] as [$val, $label])
@@ -600,6 +607,17 @@ new #[Title('My Shelf')] class extends Component {
                         @endforeach
                     </div>
                 </div>
+
+                {{-- Reset filters --}}
+                @if ($genreFilter || $authorFilter || $readingFilter || $search || $sortBy !== 'recent')
+                    <button
+                        wire:click="resetFilters"
+                        class="flex items-center gap-1.5 rounded-full border border-line bg-card px-3 py-[7px] font-sans text-[12.5px] font-medium text-ink-2 transition hover:border-danger hover:text-danger"
+                    >
+                        <flux:icon.x-mark class="size-3.5 text-muted" />
+                        <span class="hidden sm:inline">{{ __('Reset') }}</span>
+                    </button>
+                @endif
 
             </div>
         </div>
