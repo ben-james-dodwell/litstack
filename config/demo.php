@@ -18,4 +18,6 @@ return [
 
     'email' => env('DEMO_EMAIL', 'demo@litstack.app'),
 
+    'max_books' => env('DEMO_MAX_BOOKS', 50),
+
 ];

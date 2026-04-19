@@ -361,6 +361,15 @@ new class extends Component {
     {
         $this->validate(['addOwnershipStatusId' => 'required|exists:ownership_statuses,id']);
 
+        if (Auth::user()->isDemoAccount()) {
+            $max = (int) config('demo.max_books', 50);
+            if (Auth::user()->userBooks()->count() >= $max) {
+                Flux::toast(variant: 'danger', text: __("Demo accounts are limited to {$max} books."));
+
+                return;
+            }
+        }
+
         $bookData = collect($this->addResults)
             ->firstWhere('open_library_id', $this->addSelectedOpenLibraryId);
 
