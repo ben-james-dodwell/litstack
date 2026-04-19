@@ -23,23 +23,32 @@
                         Go to my shelf
                     </a>
                 @else
-                    @if (Route::has('register'))
+                    @if (config('demo.enabled'))
                         <a
-                            href="{{ route('register') }}"
-                            wire:navigate
+                            href="{{ route('demo.login') }}"
                             class="flex w-full items-center justify-center rounded-[10px] bg-accent px-4 py-2.5 font-sans text-[14px] font-semibold text-card shadow-[0_1px_0_rgba(0,0,0,0.08)] transition hover:brightness-110"
                         >
                             Get started
                         </a>
-                    @endif
-                    @if (Route::has('login'))
-                        <a
-                            href="{{ route('login') }}"
-                            wire:navigate
-                            class="flex w-full items-center justify-center rounded-[10px] border border-line bg-card px-4 py-2.5 font-sans text-[14px] font-medium text-ink-2 transition hover:border-line-2 hover:bg-bg-2"
-                        >
-                            Log in
-                        </a>
+                    @else
+                        @if (Route::has('register'))
+                            <a
+                                href="{{ route('register') }}"
+                                wire:navigate
+                                class="flex w-full items-center justify-center rounded-[10px] bg-accent px-4 py-2.5 font-sans text-[14px] font-semibold text-card shadow-[0_1px_0_rgba(0,0,0,0.08)] transition hover:brightness-110"
+                            >
+                                Get started
+                            </a>
+                        @endif
+                        @if (Route::has('login'))
+                            <a
+                                href="{{ route('login') }}"
+                                wire:navigate
+                                class="flex w-full items-center justify-center rounded-[10px] border border-line bg-card px-4 py-2.5 font-sans text-[14px] font-medium text-ink-2 transition hover:border-line-2 hover:bg-bg-2"
+                            >
+                                Log in
+                            </a>
+                        @endif
                     @endif
                 @endauth
             </div>
