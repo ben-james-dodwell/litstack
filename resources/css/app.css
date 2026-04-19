@@ -58,6 +58,9 @@
     --color-muted:  #8a7f72;
 }
 
+/* Alpine cloak — hide elements before Alpine initialises */
+[x-cloak] { display: none !important; }
+
 /* Focus rings */
 @layer base {
     *,

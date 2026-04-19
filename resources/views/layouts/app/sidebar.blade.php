@@ -139,23 +139,23 @@
                     x-transition:leave="transition duration-150 ease-in"
                     x-transition:leave-start="translate-y-0 opacity-100"
                     x-transition:leave-end="-translate-y-1 opacity-0"
-                    class="absolute right-0 top-full z-30 w-60 border-b border-l border-line bg-bg-2 px-3 py-2 shadow-[0_8px_24px_-8px_rgba(30,20,10,0.15)]"
+                    class="absolute left-0 right-0 top-full z-30 border-b border-line bg-bg-2 px-3 py-2 shadow-[0_8px_24px_-8px_rgba(30,20,10,0.15)]"
                 >
-                    <div class="mb-1.5 border-b border-line pb-2 pt-0.5">
-                        <div class="truncate font-sans text-[13px] font-medium text-ink">{{ auth()->user()->name }}</div>
-                        <div class="truncate font-sans text-[11px] text-muted">{{ auth()->user()->email }}</div>
-                    </div>
+                    <p class="px-3 pb-1.5 pt-0.5 font-sans text-[10.5px] font-semibold uppercase tracking-[0.07em] text-muted">Account</p>
+
                     <a href="{{ route('profile.edit') }}" wire:navigate @click="userOpen = false"
-                       class="flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-sans text-[14px] text-ink transition hover:bg-bg-3">
-                        <flux:icon.cog class="size-4 shrink-0 text-muted" />
+                       class="flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-sans text-[14px] transition hover:bg-bg-3
+                              {{ request()->routeIs('profile.edit') ? 'border border-line-2 bg-card font-semibold text-accent-ink' : 'text-ink' }}">
+                        <flux:icon.cog class="size-4 shrink-0 {{ request()->routeIs('profile.edit') ? 'text-accent-ink' : 'text-muted' }}" />
                         {{ __('Profile') }}
                     </a>
                     <a href="{{ route('security.edit') }}" wire:navigate @click="userOpen = false"
-                       class="flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-sans text-[14px] text-ink transition hover:bg-bg-3">
-                        <flux:icon.lock-closed class="size-4 shrink-0 text-muted" />
+                       class="flex items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-sans text-[14px] transition hover:bg-bg-3
+                              {{ request()->routeIs('security.edit') ? 'border border-line-2 bg-card font-semibold text-accent-ink' : 'text-ink' }}">
+                        <flux:icon.lock-closed class="size-4 shrink-0 {{ request()->routeIs('security.edit') ? 'text-accent-ink' : 'text-muted' }}" />
                         {{ __('Security') }}
                     </a>
-                    <div class="mt-1.5 border-t border-line pt-1.5">
+                    <div class="mt-1 border-t border-line pt-1">
                         <form method="POST" action="{{ route('logout') }}" class="w-full">
                             @csrf
                             <button type="submit" class="flex w-full items-center gap-2.5 rounded-[10px] px-3 py-2.5 font-sans text-[14px] text-ink transition hover:bg-bg-3">

@@ -356,6 +356,7 @@ new #[Title('My Shelf')] class extends Component {
 
         Flux::modal('shelf-add-confirm')->close();
         Flux::modal('shelf-add-search')->close();
+        $this->dispatch('close-add-search');
         $this->addQuery                 = '';
         $this->addSelectedOpenLibraryId = null;
         unset($this->addResults, $this->addUserBookIds, $this->userBooks, $this->counts);
@@ -389,18 +390,33 @@ new #[Title('My Shelf')] class extends Component {
     $ratingLabels = ['', "Didn't land", 'Fine enough', 'Worth reading', 'Excellent', 'A keeper'];
 @endphp
 
-<div class="relative flex h-full w-full flex-1 flex-col overflow-hidden">
+<div
+    class="relative flex h-full w-full flex-1 flex-col overflow-hidden"
+    x-data="{ addSearchOpen: false }"
+    @close-add-search.window="addSearchOpen = false"
+>
 
     {{-- ── Topbar ─────────────────────────────────────────────────────────── --}}
     <div class="flex shrink-0 items-center gap-3 border-b border-line bg-bg px-4 py-3 sm:gap-4 sm:px-8 sm:py-[18px]">
+        {{-- Mobile: opens inline panel --}}
+        <flux:button
+            @click="addSearchOpen = true"
+            variant="primary"
+            icon="plus"
+            class="shrink-0 lg:hidden"
+        >
+            <span class="max-sm:hidden">{{ __('Add a book') }}</span>
+            <span class="sm:hidden">{{ __('Add') }}</span>
+        </flux:button>
+
+        {{-- Desktop: opens modal --}}
         <flux:button
             @click="$flux.modal('shelf-add-search').show()"
             variant="primary"
             icon="plus"
-            class="shrink-0"
+            class="shrink-0 hidden lg:flex"
         >
-            <span class="hidden sm:inline">{{ __('Add a book') }}</span>
-            <span class="sm:hidden">{{ __('Add') }}</span>
+            {{ __('Add a book') }}
         </flux:button>
 
         <div class="relative ml-auto w-full max-w-xs sm:max-w-80">
@@ -413,8 +429,81 @@ new #[Title('My Shelf')] class extends Component {
         </div>
     </div>
 
+    {{-- ── Mobile inline add-book search (hidden on lg+) ────────────────────── --}}
+    <div
+        x-show="addSearchOpen"
+        x-cloak
+        x-transition:enter="transition duration-150 ease-out"
+        x-transition:enter-start="opacity-0 -translate-y-1"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition duration-100 ease-in"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 -translate-y-1"
+        class="flex flex-1 flex-col overflow-hidden lg:hidden"
+    >
+        <div class="flex shrink-0 items-center gap-2 border-b border-line bg-bg px-4 py-3">
+            <div class="flex-1">
+                <flux:input
+                    wire:model.live.debounce.400ms="addQuery"
+                    icon="magnifying-glass"
+                    placeholder="{{ __('Search by title, author, or ISBN…') }}"
+                    clearable
+                />
+            </div>
+            <button
+                @click="addSearchOpen = false"
+                class="shrink-0 rounded-lg px-2 py-2 font-sans text-[14px] text-muted transition hover:text-ink"
+            >
+                {{ __('Cancel') }}
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-2">
+            @if (strlen(trim($addQuery)) >= 2)
+                @if (count($this->addResults) > 0)
+                    @foreach ($this->addResults as $addBook)
+                        @php $onShelf = in_array($addBook['open_library_id'], $this->addUserBookIds); @endphp
+                        @php $ap = $coverPalettes[crc32($addBook['open_library_id'] ?? '') % count($coverPalettes)]; @endphp
+                        <div class="flex items-center gap-3.5 rounded-[10px] px-3 py-2.5 transition hover:bg-bg-2">
+                            <div class="aspect-2/3 w-11 shrink-0 overflow-hidden rounded-sm shadow-sm">
+                                @if ($addBook['cover_url'])
+                                    <img src="{{ $addBook['cover_url'] }}" alt="{{ $addBook['title'] }}" class="h-full w-full object-cover" loading="lazy" />
+                                @else
+                                    <div class="cover-ph flex h-full flex-col p-1.5" style="background-color: {{ $ap['bg'] }}; color: {{ $ap['fg'] }}">
+                                        <span class="font-serif text-[8px] font-semibold leading-tight" style="color: {{ $ap['fg'] }}">{{ $addBook['title'] }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="font-serif text-[15px] font-semibold text-ink">{{ $addBook['title'] }}</p>
+                                <p class="font-sans text-[12px] text-muted">
+                                    {{ $addBook['author'] }}
+                                    {{ $addBook['genres'] ? '· ' . implode(', ', array_slice((array) $addBook['genres'], 0, 1)) : '' }}{{ $addBook['page_count'] ? ' · ' . $addBook['page_count'] . ' pages' : '' }}
+                                </p>
+                            </div>
+                            @if ($onShelf)
+                                <span class="shrink-0 rounded-lg border border-line px-2.5 py-1.5 font-sans text-[12px] font-semibold text-muted">On shelf</span>
+                            @else
+                                <button
+                                    wire:click="selectBookToAdd('{{ $addBook['open_library_id'] }}')"
+                                    class="flex shrink-0 items-center gap-1 rounded-lg border border-line-2 bg-card px-2.5 py-1.5 font-sans text-[12px] font-semibold text-ink-2 transition hover:border-accent hover:bg-accent-soft hover:text-accent-ink"
+                                >
+                                    <flux:icon.plus class="size-3" /> Add
+                                </button>
+                            @endif
+                        </div>
+                    @endforeach
+                @else
+                    <div class="py-9 text-center font-sans text-[13px] text-muted">
+                        No results for "<em class="font-serif text-ink-2">{{ trim($addQuery) }}</em>"
+                    </div>
+                @endif
+            @endif
+        </div>
+    </div>
+
     {{-- ── Scrollable content ─────────────────────────────────────────────── --}}
-    <div class="flex-1 overflow-y-auto px-4 pb-10 pt-5 sm:px-8 sm:pb-16 sm:pt-7">
+    <div class="flex-1 overflow-y-auto px-4 pb-10 pt-5 sm:px-8 sm:pb-16 sm:pt-7" :class="addSearchOpen ? 'hidden lg:block' : ''">
 
         {{-- Page head --}}
         <div class="mb-5 flex flex-wrap items-end gap-x-3 gap-y-2 sm:mb-6">
@@ -880,7 +969,7 @@ new #[Title('My Shelf')] class extends Component {
                                 <p class="font-serif text-[15px] font-semibold text-ink">{{ $addBook['title'] }}</p>
                                 <p class="font-sans text-[12px] text-muted">
                                     {{ $addBook['author'] }}
-                                    {{ $addBook['genres'] ? '· ' . implode(', ', array_slice((array) $addBook['genres'], 0, 1)) : '' }}{{ $addBook['page_count'] ? ' · ' . $addBook['page_count'] . ' pp' : '' }}
+                                    {{ $addBook['genres'] ? '· ' . implode(', ', array_slice((array) $addBook['genres'], 0, 1)) : '' }}{{ $addBook['page_count'] ? ' · ' . $addBook['page_count'] . ' pages' : '' }}
                                 </p>
                             </div>
                             @if ($onShelf)
