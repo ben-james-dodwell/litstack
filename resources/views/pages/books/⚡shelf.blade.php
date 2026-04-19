@@ -423,7 +423,7 @@ new #[Title('My Shelf')] class extends Component {
             </flux:button>
         </div>
 
-        <div class="relative ml-auto w-full max-w-xs sm:max-w-80">
+        <div class="relative ml-auto w-full max-w-xs sm:max-w-80" :class="addSearchOpen ? 'hidden lg:block' : ''">
             <flux:input
                 wire:model.live.debounce.300ms="search"
                 icon="magnifying-glass"
@@ -450,7 +450,7 @@ new #[Title('My Shelf')] class extends Component {
                 <flux:input
                     wire:model.live.debounce.400ms="addQuery"
                     icon="magnifying-glass"
-                    placeholder="{{ __('Search by title, author, or ISBN…') }}"
+                    placeholder="{{ __('Title, author, or ISBN…') }}"
                     clearable
                 />
             </div>
@@ -539,7 +539,7 @@ new #[Title('My Shelf')] class extends Component {
                             {{ $genreFilter ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line bg-card text-ink-2 hover:border-line-2' }}"
                     >
                         <flux:icon.funnel class="size-3.5 {{ $genreFilter ? 'text-accent-ink' : 'text-muted' }}" />
-                        <span class="hidden sm:inline">{{ $genreFilter ?: __('Genre') }}</span>
+                        {{ $genreFilter ?: __('Genre') }}
                     </button>
                     <div x-show="open" x-transition class="absolute left-0 top-[calc(100%+6px)] z-20 max-h-80 min-w-50 overflow-y-auto rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)] sm:left-auto sm:right-0">
                         <button wire:click="$set('genreFilter', '')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ !$genreFilter ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ __('All genres') }}</button>
@@ -557,7 +557,7 @@ new #[Title('My Shelf')] class extends Component {
                             {{ $authorFilter ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line bg-card text-ink-2 hover:border-line-2' }}"
                     >
                         <flux:icon.funnel class="size-3.5 {{ $authorFilter ? 'text-accent-ink' : 'text-muted' }}" />
-                        <span class="hidden sm:inline">{{ $authorFilter ?: __('Author') }}</span>
+                        {{ $authorFilter ?: __('Author') }}
                     </button>
                     <div x-show="open" x-transition class="absolute left-0 top-[calc(100%+6px)] z-20 max-h-80 min-w-55 overflow-y-auto rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)] sm:left-auto sm:right-0">
                         <button wire:click="$set('authorFilter', '')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ !$authorFilter ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ __('All authors') }}</button>
@@ -575,13 +575,11 @@ new #[Title('My Shelf')] class extends Component {
                             {{ $readingFilter ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line bg-card text-ink-2 hover:border-line-2' }}"
                     >
                         <flux:icon.funnel class="size-3.5 {{ $readingFilter ? 'text-accent-ink' : 'text-muted' }}" />
-                        <span class="hidden sm:inline">
-                            @if ($readingFilter)
-                                {{ ucfirst(str_replace('_', ' ', $this->readingStatuses->firstWhere('id', $readingFilter)?->name ?? 'Status')) }}
-                            @else
-                                {{ __('Status') }}
-                            @endif
-                        </span>
+                        @if ($readingFilter)
+                            {{ ucfirst(str_replace('_', ' ', $this->readingStatuses->firstWhere('id', $readingFilter)?->name ?? 'Status')) }}
+                        @else
+                            {{ __('Status') }}
+                        @endif
                     </button>
                     <div x-show="open" x-transition class="absolute left-0 top-[calc(100%+6px)] z-20 min-w-45 rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)] sm:left-auto sm:right-0">
                         <button wire:click="$set('readingFilter', '')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ !$readingFilter ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ __('All statuses') }}</button>
