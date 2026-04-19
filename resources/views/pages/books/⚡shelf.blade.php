@@ -315,7 +315,7 @@ new #[Title('My Shelf')] class extends Component {
     public function selectBookToAdd(string $openLibraryId): void
     {
         $this->addSelectedOpenLibraryId = $openLibraryId;
-        $this->addOwnershipStatusId     = OwnershipStatus::where('name', 'owned')->value('id');
+        $this->addOwnershipStatusId     = OwnershipStatus::where('name', 'owned')->value('id') ?? 0;
         Flux::modal('shelf-add-confirm')->show();
     }
 

@@ -4,26 +4,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 
-Route::post('/debug-post', function (\Illuminate\Http\Request $request) {
-    return response()->json([
-        'session_token'  => session()->token(),
-        'x_csrf_header'  => $request->header('X-CSRF-TOKEN'),
-        'content_type'   => $request->header('Content-Type'),
-        'is_json'        => $request->isJson(),
-        '_token_input'   => $request->input('_token'),
-        'raw_body_start' => substr($request->getContent(), 0, 100),
-    ]);
-});
-
-Route::get('/debug-headers', function (\Illuminate\Http\Request $request) {
-    return response()->json([
-        'session_token'   => session()->token(),
-        'csrf_token'      => csrf_token(),
-        'x_csrf_header'   => $request->header('X-CSRF-TOKEN'),
-        'content_type'    => $request->header('Content-Type'),
-        'is_json'         => $request->isJson(),
-    ]);
-});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('dashboard', '/books/shelf')->name('dashboard');
