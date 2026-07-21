@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -29,6 +30,12 @@ class OpenLibraryService
      */
     public function search(string $query, int $limit = 20): array
     {
+        $key = 'open_library.search.'.md5($query.'|'.$limit);
+
+        if (Cache::has($key)) {
+            return Cache::get($key);
+        }
+
         try {
             $response = Http::timeout(10)
                 ->get(self::BASE_URL.'/search.json', [
@@ -41,11 +48,15 @@ class OpenLibraryService
                 return [];
             }
 
-            return collect($response->json('docs', []))
+            $results = collect($response->json('docs', []))
                 ->map(fn (array $doc) => $this->normalise($doc))
                 ->filter(fn (array $book) => filled($book['title']))
                 ->values()
                 ->all();
+
+            Cache::put($key, $results, now()->addMinutes(10));
+
+            return $results;
 
         } catch (ConnectionException $e) {
             Log::warning('Open Library search failed', ['query' => $query, 'error' => $e->getMessage()]);
@@ -61,6 +72,12 @@ class OpenLibraryService
      */
     public function fetchDetails(string $openLibraryId): array
     {
+        $key = 'open_library.details.'.md5($openLibraryId);
+
+        if (Cache::has($key)) {
+            return Cache::get($key);
+        }
+
         try {
             $response = Http::timeout(10)
                 ->get(self::BASE_URL.$openLibraryId.'.json');
@@ -77,9 +94,13 @@ class OpenLibraryService
                 default => null,
             };
 
-            return array_filter([
+            $details = array_filter([
                 'description' => $description,
             ]);
+
+            Cache::put($key, $details, now()->addDay());
+
+            return $details;
 
         } catch (ConnectionException $e) {
             Log::warning('Open Library fetchDetails failed', ['id' => $openLibraryId, 'error' => $e->getMessage()]);
