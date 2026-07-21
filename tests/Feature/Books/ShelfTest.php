@@ -1,5 +1,7 @@
 <?php
 
+use App\Jobs\CacheCoverImage;
+use App\Jobs\FetchBookDetails;
 use App\Models\Book;
 use App\Models\OwnershipStatus;
 use App\Models\ReadingStatus;
@@ -7,6 +9,8 @@ use App\Models\User;
 use App\Models\UserBook;
 use Database\Seeders\OwnershipStatusSeeder;
 use Database\Seeders\ReadingStatusSeeder;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -95,6 +99,38 @@ test('clear filters resets all filters', function () {
         ->assertSet('genreFilter', '')
         ->assertSet('authorFilter', '')
         ->assertSet('sortBy', 'recent');
+});
+
+test('adding a new book queues detail and cover jobs instead of fetching synchronously', function () {
+    Http::fake([
+        'openlibrary.org/*' => Http::response([
+            'docs' => [[
+                'key' => '/works/OL1W',
+                'title' => 'Dune',
+                'author_name' => ['Frank Herbert'],
+                'cover_i' => 12345,
+            ]],
+        ]),
+    ]);
+    Queue::fake();
+
+    $owned = OwnershipStatus::where('name', 'owned')->first();
+
+    Livewire::actingAs($this->user)
+        ->test('pages::books.shelf')
+        ->set('addQuery', 'dune')
+        ->call('selectBookToAdd', '/works/OL1W')
+        ->set('addOwnershipStatusId', (string) $owned->id)
+        ->call('addToShelf');
+
+    $book = Book::where('open_library_id', '/works/OL1W')->firstOrFail();
+
+    expect(UserBook::where(['user_id' => $this->user->id, 'book_id' => $book->id])->exists())->toBeTrue();
+
+    Queue::assertPushed(FetchBookDetails::class, fn ($job) => $job->book->is($book));
+    Queue::assertPushed(CacheCoverImage::class, fn ($job) => $job->book->is($book));
+
+    Http::assertSentCount(1);
 });
 
 test('savePanelShelfEntry cannot update another users book', function () {

@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\CacheCoverImage;
+use App\Jobs\FetchBookDetails;
 use App\Models\Book;
 use App\Models\OwnershipStatus;
 use App\Models\UserBook;
@@ -80,8 +81,6 @@ new #[Title('Search Books')] class extends Component {
             return;
         }
 
-        $service = app(OpenLibraryService::class);
-
         $book = Book::firstOrCreate(
             ['open_library_id' => $bookData['open_library_id']],
             collect($bookData)->except('open_library_id')->all(),
@@ -89,10 +88,7 @@ new #[Title('Search Books')] class extends Component {
 
         if ($book->wasRecentlyCreated) {
             if (blank($book->description)) {
-                $details = $service->fetchDetails($bookData['open_library_id']);
-                if ($details) {
-                    $book->update($details);
-                }
+                FetchBookDetails::dispatch($book);
             }
 
             if ($book->cover_url) {
