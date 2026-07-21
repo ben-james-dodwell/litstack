@@ -96,7 +96,7 @@ class ShelfSeeder extends Seeder
             'isbn_13' => '9780061743528',
             'genres' => ['Classic', 'Literary Fiction'],
         ], started_at: now()->subMonths(6), ended_at: now()->subMonths(5));
-        Review::create(['user_book_id' => $userBook->id, 'rating' => 5, 'body' => 'A timeless classic. The moral courage shown by Atticus Finch is something every reader carries with them long after the last page.']);
+        Review::updateOrCreate(['user_book_id' => $userBook->id], ['rating' => 5, 'body' => 'A timeless classic. The moral courage shown by Atticus Finch is something every reader carries with them long after the last page.']);
 
         $userBook = $this->shelf($user->id, $ownedId, $completedId, [
             'open_library_id' => 'isbn:9780141439518',
@@ -107,7 +107,7 @@ class ShelfSeeder extends Seeder
             'isbn_13' => '9780141439518',
             'genres' => ['Classic', 'Romance'],
         ], started_at: now()->subMonths(10), ended_at: now()->subMonths(9));
-        Review::create(['user_book_id' => $userBook->id, 'rating' => 4, 'body' => "Austen's wit is razor-sharp and the romance is satisfying, though it takes a while to get going."]);
+        Review::updateOrCreate(['user_book_id' => $userBook->id], ['rating' => 4, 'body' => "Austen's wit is razor-sharp and the romance is satisfying, though it takes a while to get going."]);
 
         $userBook = $this->shelf($user->id, $ownedId, $completedId, [
             'open_library_id' => 'isbn:9780743273565',
@@ -118,7 +118,7 @@ class ShelfSeeder extends Seeder
             'isbn_13' => '9780743273565',
             'genres' => ['Classic', 'Literary Fiction'],
         ], started_at: now()->subYear(), ended_at: now()->subMonths(11));
-        Review::create(['user_book_id' => $userBook->id, 'rating' => 3, 'body' => null]);
+        Review::updateOrCreate(['user_book_id' => $userBook->id], ['rating' => 3, 'body' => null]);
 
         // Completed without review
         $this->shelf($user->id, $ownedId, $completedId, [
@@ -163,13 +163,14 @@ class ShelfSeeder extends Seeder
             CacheCoverImage::dispatch($book);
         }
 
-        return UserBook::create([
-            'user_id' => $userId,
-            'book_id' => $book->id,
-            'ownership_status_id' => $ownershipStatusId,
-            'reading_status_id' => $readingStatusId,
-            'started_at' => $started_at,
-            'ended_at' => $ended_at,
-        ]);
+        return UserBook::updateOrCreate(
+            ['user_id' => $userId, 'book_id' => $book->id],
+            [
+                'ownership_status_id' => $ownershipStatusId,
+                'reading_status_id' => $readingStatusId,
+                'started_at' => $started_at,
+                'ended_at' => $ended_at,
+            ],
+        );
     }
 }
