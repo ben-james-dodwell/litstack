@@ -28,8 +28,12 @@ class OpenLibraryService
      *
      * @return array<int, array<string, mixed>>
      */
-    public function search(string $query, int $limit = 20): array
+    public function search(string $query, int $limit = 20, bool $sanitize = true): array
     {
+        if ($sanitize) {
+            $query = $this->sanitiseQuery($query);
+        }
+
         $key = 'open_library.search.'.md5($query.'|'.$limit);
 
         if (Cache::has($key)) {
@@ -116,9 +120,21 @@ class OpenLibraryService
      */
     public function findByIsbn(string $isbn): ?array
     {
-        $results = $this->search("isbn:{$isbn}", 1);
+        $results = $this->search("isbn:{$isbn}", 1, sanitize: false);
 
         return $results[0] ?? null;
+    }
+
+    /**
+     * Strip punctuation that Open Library's query parser treats as special syntax
+     * (e.g. a colon triggers a field-scoped search), so free-text queries like
+     * "Mr Mercedes: A Novel" aren't misinterpreted and yield no results.
+     */
+    private function sanitiseQuery(string $query): string
+    {
+        $query = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $query) ?? $query;
+
+        return trim(preg_replace('/\s+/', ' ', $query) ?? $query);
     }
 
     /**

@@ -64,6 +64,30 @@ test('a failed search is not cached', function () {
     Http::assertSentCount(2);
 });
 
+test('search strips punctuation from the query before calling the API', function () {
+    Http::fake([
+        'openlibrary.org/*' => Http::response(fakeSearchResponse()),
+    ]);
+
+    $service = app(OpenLibraryService::class);
+
+    $service->search('Stephen King: Mr. Mercedes!');
+
+    Http::assertSent(fn ($request) => $request['q'] === 'Stephen King Mr Mercedes');
+});
+
+test('findByIsbn does not strip the isbn: query prefix', function () {
+    Http::fake([
+        'openlibrary.org/*' => Http::response(fakeSearchResponse()),
+    ]);
+
+    $service = app(OpenLibraryService::class);
+
+    $service->findByIsbn('9780441013593');
+
+    Http::assertSent(fn ($request) => $request['q'] === 'isbn:9780441013593');
+});
+
 test('fetchDetails only hits the API once for the same id', function () {
     Http::fake([
         'openlibrary.org/*' => Http::response(['description' => 'A desert planet epic.']),
