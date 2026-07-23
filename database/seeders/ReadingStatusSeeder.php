@@ -2,17 +2,15 @@
 
 namespace Database\Seeders;
 
+use App\Models\ReadingStatus;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
 class ReadingStatusSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::table('reading_statuses')->insert([
-            ['name' => 'in_progress'],
-            ['name' => 'completed'],
-            ['name' => 'abandoned'],
-        ]);
+        foreach (['in_progress', 'completed', 'abandoned'] as $name) {
+            ReadingStatus::firstOrCreate(['name' => $name]);
+        }
     }
 }
