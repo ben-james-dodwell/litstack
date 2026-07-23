@@ -17,11 +17,10 @@ class DatabaseSeeder extends Seeder
             ReadingStatusSeeder::class,
         ]);
 
-        User::factory()->create([
-            'name' => 'Demo User',
-            'email' => 'demo@litstack.app',
-            'password' => 'Passw0rd',
-        ]);
+        User::firstOrCreate(
+            ['email' => 'demo@litstack.app'],
+            ['name' => 'Demo User', 'password' => 'Passw0rd'],
+        );
 
         $this->call(ShelfSeeder::class);
     }
