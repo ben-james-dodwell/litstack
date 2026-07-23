@@ -98,3 +98,18 @@ jobs:
 
       - name: Run Tests
         run: ./vendor/bin/pest
+
+  checkov:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12.3114.0
+        with:
+          directory: .github/workflows
+          framework: github_actions
+          output_format: cli
+          soft_fail: true
