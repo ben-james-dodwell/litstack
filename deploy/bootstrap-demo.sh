@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
 #
-# One-time bootstrap for the live (non-demo) Litstack deployment.
-# Run manually on the VPS once: bash deploy/bootstrap-live.sh
+# One-time bootstrap for the demo Litstack deployment.
+# Run manually on the VPS once: bash deploy/bootstrap-demo.sh
 # Ongoing deploys are handled by .github/workflows/deploy.yml — this
 # script only needs to be re-run if the server-level config below changes.
 
 set -e
 
-APP_PATH="/var/www/litstack"
-DOMAIN="litstack.app"
+APP_PATH="/var/www/litstack-demo"
+DOMAIN="demo.litstack.app"
 REPO="git@github.com:ben-james-dodwell/litstack.git"
 PHP_VERSION="8.3"
-NGINX_SITE="litstack-live"
-WORKER_NAME="litstack-live-worker"
+NGINX_SITE="litstack-demo"
+WORKER_NAME="litstack-demo-worker"
 
-echo "🚀 Bootstrapping live Litstack..."
+echo "🚀 Bootstrapping demo Litstack..."
 
 # ----------------------------------------
 # LOAD DEPLOY CONFIG (DB_NAME, DB_USER, DB_PASS)
 # ----------------------------------------
-if [ ! -f ~/litstack/deploy-live.env ]; then
-  echo "❌ Missing ~/litstack/deploy-live.env"
+if [ ! -f ~/litstack/deploy-demo.env ]; then
+  echo "❌ Missing ~/litstack/deploy-demo.env"
   exit 1
 fi
-source ~/litstack/deploy-live.env
+source ~/litstack/deploy-demo.env
 
 # ----------------------------------------
 # 1. CLONE OR UPDATE CODE
@@ -48,7 +48,7 @@ sudo -u deploy composer install --no-dev --no-interaction --prefer-dist --optimi
 if [ ! -f .env ]; then
   cp .env.example .env
 fi
-sed -i "s/^APP_NAME=.*/APP_NAME=Litstack/" .env
+sed -i "s/^APP_NAME=.*/APP_NAME=Litstack Demo/" .env
 sed -i "s/^APP_ENV=.*/APP_ENV=production/" .env
 sed -i "s/^APP_DEBUG=.*/APP_DEBUG=false/" .env
 sed -i "s|^APP_URL=.*|APP_URL=https://${DOMAIN}|" .env
@@ -61,10 +61,13 @@ sed -i "s/^[[:space:]]*#*[[:space:]]*DB_DATABASE=.*/DB_DATABASE=${DB_NAME}/" .en
 sed -i "s/^[[:space:]]*#*[[:space:]]*DB_USERNAME=.*/DB_USERNAME=${DB_USER}/" .env
 sed -i "s/^[[:space:]]*#*[[:space:]]*DB_PASSWORD=.*/DB_PASSWORD=${DB_PASS}/" .env
 
-# Never force DEMO_ENABLED here — this instance must default to false (config/demo.php).
+# This instance is specifically the public demo — unlike live, it must have
+# demo login enabled.
+sed -i "s/^[[:space:]]*#*[[:space:]]*DEMO_ENABLED=.*/DEMO_ENABLED=true/" .env
+sed -i "s/^[[:space:]]*#*[[:space:]]*DEMO_EMAIL=.*/DEMO_EMAIL=demo@litstack.app/" .env
 
-# Only ever generate the app key once. Regenerating it on a live site invalidates
-# existing sessions and any encrypted data, so this must not run on every deploy.
+# Only ever generate the app key once. Regenerating it invalidates existing
+# sessions and any encrypted data, so this must not run on every deploy.
 if grep -q "^APP_KEY=$" .env; then
   php artisan key:generate --force
 else
@@ -72,7 +75,7 @@ else
 fi
 
 # ----------------------------------------
-# 4. DATABASE + LOOKUP TABLES
+# 4. DATABASE + SEED DATA
 # ----------------------------------------
 echo "🗄️ Ensuring database exists..."
 
@@ -86,10 +89,10 @@ FLUSH PRIVILEGES;
 
 php artisan migrate --force
 
-# Lookup tables only — never run the full DatabaseSeeder here, it also creates
-# a "Demo User" account with a well-known password, which must never exist on live.
-php artisan db:seed --class=Database\\Seeders\\OwnershipStatusSeeder --force
-php artisan db:seed --class=Database\\Seeders\\ReadingStatusSeeder --force
+# Unlike live, this instance wants the full DatabaseSeeder -- lookup tables,
+# the "Demo User" account, and the pre-populated shelf. All of it is
+# idempotent (firstOrCreate/updateOrCreate throughout), safe to re-run.
+php artisan db:seed --force
 
 php artisan storage:link
 
@@ -158,11 +161,8 @@ sudo systemctl reload nginx
 echo "🔐 Configuring SSL..."
 
 # Always run certbot after (re)writing the nginx config above, so it re-adds
-# the SSL directives to whatever was just written -- the nginx config block
-# above is unconditionally overwritten every run, so gating this behind a
-# "does the cert already exist" check (as before) meant the SSL directives
-# never got restored once the cert existed. --keep-until-expiring avoids
-# reissuing a certificate that's still valid.
+# the SSL directives to whatever was just written -- --keep-until-expiring
+# avoids reissuing a certificate that's still valid.
 sudo certbot --nginx -d "$DOMAIN" \
   --non-interactive --agree-tos -m admin@${DOMAIN} \
   --keep-until-expiring
@@ -201,5 +201,5 @@ echo "⏱️ Setting up Laravel scheduler..."
 CRON_JOB="* * * * * cd ${APP_PATH} && php artisan schedule:run >> /dev/null 2>&1"
 ( sudo -u deploy crontab -l 2>/dev/null | grep -v -F "$CRON_JOB" ; echo "$CRON_JOB" ) | sudo -u deploy crontab -
 
-echo "✅ Bootstrap complete for live Litstack"
+echo "✅ Bootstrap complete for demo Litstack"
 echo "🌍 Live at: https://${DOMAIN}"
