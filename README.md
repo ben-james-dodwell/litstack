@@ -108,10 +108,61 @@ php artisan demo:reset
 This is also scheduled to run automatically every day at 04:00. To activate the scheduler on your server, add one cron entry:
 
 ```cron
-* * * * * cd /var/www/litstack && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /var/www/litstack/current && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 On Laravel Cloud / Forge / Vapor, use the built-in Scheduler panel instead.
+
+---
+
+## Deployment
+
+Demo and production deploy automatically via `.github/workflows/deploy.yml` on every push to `master`: a single build compiles `vendor/` and `public/build` once, and both servers extract that identical artifact, so demo and live always run the exact same build rather than two independently-built copies of the same source.
+
+Each server uses a releases/shared/current layout rather than a single persistent checkout:
+
+```
+/var/www/litstack/
+├── current -> releases/<commit-sha>/   # symlink; web server, queue worker, and cron all point here
+├── releases/
+│   └── <commit-sha>/                   # fresh checkout + built vendor/, public/build per deploy
+└── shared/
+    ├── .env                            # persists across every release
+    └── storage/                        # persists across every release (covers, logs, framework cache)
+```
+
+Each deploy clones `master` fresh into `releases/<sha>`, symlinks `.env` and `storage/` in from `shared/`, runs migrations, and only then atomically re-points `current` at the new release — if a migration fails, `current` is left untouched and the site keeps serving the last good release. Old releases are pruned automatically, keeping the last 5.
+
+**One-time setup required on a server before its first deploy under this layout** (`/var/www/litstack` for live, `/var/www/litstack-demo` for demo — run as the deploy user):
+
+```bash
+cd /var/www/litstack   # or litstack-demo
+
+mkdir -p releases/initial shared
+mv .env shared/.env
+mv storage shared/storage
+
+for item in *; do
+  case "$item" in
+    releases|shared) ;;
+    *) mv "$item" releases/initial/ ;;
+  esac
+done
+
+ln -s "$(pwd)/shared/.env" releases/initial/.env
+ln -s "$(pwd)/shared/storage" releases/initial/storage
+mkdir -p releases/initial/public
+ln -sfn "$(pwd)/shared/storage/app/public" releases/initial/public/storage
+
+ln -sfn "$(pwd)/releases/initial" current
+```
+
+Then point these at `current` instead of the fixed app root, and restart/reload each:
+- **Web server / PHP-FPM document root** → `/var/www/litstack/current/public`
+- **Queue worker** (Supervisor/systemd) → command should invoke `current/artisan`, e.g. `php /var/www/litstack/current/artisan queue:work`
+- **Cron entry** (above) → already updated to `cd /var/www/litstack/current`
+
+Verify the site still loads correctly against `current` before the next deploy runs. Until this migration is done on a given server, its deploy job fails safely at a guard check (`shared/.env missing`) rather than running against the old layout.
 
 ---
 

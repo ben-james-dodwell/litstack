@@ -92,21 +92,38 @@ jobs:
           key: ${{ secrets.DEMO_SSH_KEY }}
           script: |
             set -e
-            cd /var/www/litstack-demo
 
-            git fetch --all
-            git reset --hard origin/master
+            APP_ROOT=/var/www/litstack-demo
+            SHARED="$APP_ROOT/shared"
+            RELEASE="$APP_ROOT/releases/${{ github.sha }}"
 
-            rm -rf vendor public/build
-            tar xzf /tmp/release.tar.gz -C .
+            test -f "$SHARED/.env" || { echo "::error::$SHARED/.env missing -- has this server been migrated to the releases layout? See README."; exit 1; }
+
+            mkdir -p "$RELEASE"
+            git clone --depth 1 --branch master https://github.com/ben-james-dodwell/litstack.git "$RELEASE"
+            rm -rf "$RELEASE/.git"
+
+            tar xzf /tmp/release.tar.gz -C "$RELEASE"
             rm -f /tmp/release.tar.gz
 
+            rm -f "$RELEASE/.env"
+            ln -s "$SHARED/.env" "$RELEASE/.env"
+            rm -rf "$RELEASE/storage"
+            ln -s "$SHARED/storage" "$RELEASE/storage"
+            mkdir -p "$RELEASE/public"
+            ln -sfn "$SHARED/storage/app/public" "$RELEASE/public/storage"
+
+            cd "$RELEASE"
             php artisan migrate --force
             php artisan db:seed --class=Database\\Seeders\\ShelfSeeder --force
             php artisan optimize:clear
             php artisan optimize
 
+            ln -sfn "$RELEASE" "$APP_ROOT/current"
             php artisan queue:restart
+
+            cd "$APP_ROOT/releases"
+            ls -1dt */ 2>/dev/null | tail -n +6 | xargs -r rm -rf
 
   deploy-live:
     needs: [build, deploy-demo]
@@ -136,17 +153,34 @@ jobs:
           key: ${{ secrets.LIVE_SSH_KEY }}
           script: |
             set -e
-            cd /var/www/litstack
 
-            git fetch --all
-            git reset --hard origin/master
+            APP_ROOT=/var/www/litstack
+            SHARED="$APP_ROOT/shared"
+            RELEASE="$APP_ROOT/releases/${{ github.sha }}"
 
-            rm -rf vendor public/build
-            tar xzf /tmp/release.tar.gz -C .
+            test -f "$SHARED/.env" || { echo "::error::$SHARED/.env missing -- has this server been migrated to the releases layout? See README."; exit 1; }
+
+            mkdir -p "$RELEASE"
+            git clone --depth 1 --branch master https://github.com/ben-james-dodwell/litstack.git "$RELEASE"
+            rm -rf "$RELEASE/.git"
+
+            tar xzf /tmp/release.tar.gz -C "$RELEASE"
             rm -f /tmp/release.tar.gz
 
+            rm -f "$RELEASE/.env"
+            ln -s "$SHARED/.env" "$RELEASE/.env"
+            rm -rf "$RELEASE/storage"
+            ln -s "$SHARED/storage" "$RELEASE/storage"
+            mkdir -p "$RELEASE/public"
+            ln -sfn "$SHARED/storage/app/public" "$RELEASE/public/storage"
+
+            cd "$RELEASE"
             php artisan migrate --force
             php artisan optimize:clear
             php artisan optimize
 
+            ln -sfn "$RELEASE" "$APP_ROOT/current"
             php artisan queue:restart
+
+            cd "$APP_ROOT/releases"
+            ls -1dt */ 2>/dev/null | tail -n +6 | xargs -r rm -rf
