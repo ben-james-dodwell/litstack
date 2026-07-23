@@ -2,7 +2,7 @@
 #
 # One-time bootstrap for the live (non-demo) Litstack deployment.
 # Run manually on the VPS once: bash deploy/bootstrap-live.sh
-# Ongoing deploys are handled by .github/workflows/deploy-live.yml — this
+# Ongoing deploys are handled by .github/workflows/deploy.yml — this
 # script only needs to be re-run if the server-level config below changes.
 
 set -e
@@ -119,6 +119,19 @@ server {
 
     root ${APP_PATH}/public;
     index index.php;
+
+    # Vite build output: filenames are content-hashed, safe to cache indefinitely.
+    location ^~ /build/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Cached cover images: filename is the book ID, not content-hashed, so a
+    # stale image could exist under the same URL -- cache briefly, not forever.
+    location ^~ /storage/covers/ {
+        expires 7d;
+        add_header Cache-Control "public";
+    }
 
     location / {
         try_files \$uri \$uri/ /index.php?\$query_string;
