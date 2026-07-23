@@ -105,4 +105,3 @@ jobs:
           framework: github_actions
           output_format: cli
           quiet: true
-          soft_fail: true
