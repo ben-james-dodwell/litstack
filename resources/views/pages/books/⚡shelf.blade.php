@@ -398,11 +398,8 @@ new class extends Component {
         );
 
         Flux::modal('shelf-add-confirm')->close();
-        Flux::modal('shelf-add-search')->close();
-        $this->dispatch('close-add-search');
-        $this->addQuery                 = '';
         $this->addSelectedOpenLibraryId = null;
-        unset($this->addResults, $this->addUserBookIds, $this->userBooks, $this->counts);
+        unset($this->addUserBookIds, $this->userBooks, $this->counts);
         Flux::toast(variant: 'success', text: __('Book added to your shelf.'));
     }
 

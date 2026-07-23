@@ -133,6 +133,44 @@ test('adding a new book queues detail and cover jobs instead of fetching synchro
     Http::assertSentCount(1);
 });
 
+test('adding a book keeps the search open so more books can be added', function () {
+    Http::fake([
+        'openlibrary.org/*' => Http::response([
+            'docs' => [[
+                'key' => '/works/OL1W',
+                'title' => 'Dune',
+                'author_name' => ['Frank Herbert'],
+                'cover_i' => 12345,
+            ]],
+        ]),
+    ]);
+    Queue::fake();
+
+    $owned = OwnershipStatus::where('name', 'owned')->first();
+
+    Livewire::actingAs($this->user)
+        ->test('pages::books.shelf')
+        ->set('addQuery', 'dune')
+        ->call('selectBookToAdd', '/works/OL1W')
+        ->set('addOwnershipStatusId', (string) $owned->id)
+        ->call('addToShelf')
+        ->assertSet('addQuery', 'dune')
+        ->assertNotDispatched('modal-close', name: 'shelf-add-search')
+        ->assertNotDispatched('close-add-search')
+        ->assertDispatched('modal-close', name: 'shelf-add-confirm')
+        // The same search results stay on screen (no re-fetch), and the
+        // just-added book now shows "On shelf" instead of the Add button.
+        ->assertSee('Dune')
+        ->assertSee('On shelf')
+        ->assertDontSee('selectBookToAdd(\'/works/OL1W\')', false);
+
+    Http::assertSentCount(1);
+
+    $book = Book::where('open_library_id', '/works/OL1W')->firstOrFail();
+
+    expect(UserBook::where(['user_id' => $this->user->id, 'book_id' => $book->id])->exists())->toBeTrue();
+});
+
 test('savePanelShelfEntry cannot update another users book', function () {
     $owned = OwnershipStatus::where('name', 'owned')->first();
     $other = User::factory()->create();
