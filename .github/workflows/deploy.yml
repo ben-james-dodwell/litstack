@@ -76,7 +76,7 @@ jobs:
           target: /tmp
 
       - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.DEMO_SSH_HOST }}
           username: ${{ secrets.DEMO_SSH_USER }}
@@ -119,7 +119,7 @@ jobs:
           target: /tmp
 
       - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.LIVE_SSH_HOST }}
           username: ${{ secrets.LIVE_SSH_USER }}
