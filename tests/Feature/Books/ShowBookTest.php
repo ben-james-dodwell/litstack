@@ -13,11 +13,11 @@ use Livewire\Livewire;
 beforeEach(function () {
     $this->seed([OwnershipStatusSeeder::class, ReadingStatusSeeder::class]);
 
-    $this->user    = User::factory()->create();
-    $this->book    = Book::factory()->create();
+    $this->user = User::factory()->create();
+    $this->book = Book::factory()->create();
     $this->userBook = UserBook::factory()->create([
-        'user_id'             => $this->user->id,
-        'book_id'             => $this->book->id,
+        'user_id' => $this->user->id,
+        'book_id' => $this->book->id,
         'ownership_status_id' => OwnershipStatus::where('name', 'owned')->first()->id,
     ]);
 });
