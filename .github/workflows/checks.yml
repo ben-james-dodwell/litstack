@@ -1,9 +1,6 @@
-name: ci-cd
+name: checks
 
 on:
-  push:
-    branches:
-      - master
   pull_request:
     branches:
       - master
@@ -107,62 +104,3 @@ jobs:
 
       - name: Run Tests
         run: ./vendor/bin/pest
-
-  deploy-demo:
-    needs: [quality, ci]
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
-    runs-on: ubuntu-latest
-    environment: Demo
-    steps:
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.DEMO_SSH_HOST }}
-          username: ${{ secrets.DEMO_SSH_USER }}
-          key: ${{ secrets.DEMO_SSH_KEY }}
-          script: |
-            set -e
-            cd /var/www/litstack-demo
-
-            git fetch --all
-            git reset --hard origin/master
-
-            composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-            npm ci
-            npm run build
-
-            php artisan migrate --force
-            php artisan db:seed --class=Database\\Seeders\\ShelfSeeder --force
-            php artisan optimize:clear
-            php artisan optimize
-
-            php artisan queue:restart
-
-  deploy-live:
-    needs: [quality, ci, deploy-demo]
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
-    runs-on: ubuntu-latest
-    environment: Production
-    steps:
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.LIVE_SSH_HOST }}
-          username: ${{ secrets.LIVE_SSH_USER }}
-          key: ${{ secrets.LIVE_SSH_KEY }}
-          script: |
-            set -e
-            cd /var/www/litstack
-
-            git fetch --all
-            git reset --hard origin/master
-
-            composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-            npm ci
-            npm run build
-
-            php artisan migrate --force
-            php artisan optimize:clear
-            php artisan optimize
-
-            php artisan queue:restart
