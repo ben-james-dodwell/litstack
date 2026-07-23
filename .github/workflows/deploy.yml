@@ -9,9 +9,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
 
@@ -62,6 +67,7 @@ jobs:
   deploy-demo:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: Demo
     steps:
       - name: Download Release Artifact
@@ -105,6 +111,7 @@ jobs:
   deploy-live:
     needs: [build, deploy-demo]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: Production
     steps:
       - name: Download Release Artifact
