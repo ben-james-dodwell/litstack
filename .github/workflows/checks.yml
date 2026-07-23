@@ -101,6 +101,9 @@ jobs:
   checkov:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v7
 
@@ -109,5 +112,12 @@ jobs:
         with:
           directory: .github/workflows
           framework: github_actions
-          output_format: cli
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
           quiet: true
+
+      - name: Upload SARIF File
+        uses: github/codeql-action/upload-sarif@v4
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif
