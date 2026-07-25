@@ -462,6 +462,12 @@ new class extends Component {
                 clearable
             />
         </div>
+
+        <div class="shrink-0" :class="addSearchOpen ? 'hidden lg:block' : ''">
+            <flux:button :href="route('books.export', array_filter(['ownership' => $ownershipFilter]))" icon="arrow-down-tray">
+                <span class="max-sm:hidden">{{ __('Export') }}</span>
+            </flux:button>
+        </div>
     </div>
 
     {{-- ── Mobile inline add-book search (hidden on lg+) ────────────────────── --}}
