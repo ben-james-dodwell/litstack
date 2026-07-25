@@ -464,8 +464,19 @@ new class extends Component {
         </div>
 
         <div class="shrink-0" :class="addSearchOpen ? 'hidden lg:block' : ''">
-            <flux:button :href="route('books.export', array_filter(['ownership' => $ownershipFilter]))" icon="arrow-down-tray">
-                <span class="max-sm:hidden">{{ __('Export') }}</span>
+            <flux:button
+                :href="route('books.export', array_filter(['ownership' => $ownershipFilter]))"
+                icon="arrow-down-tray"
+                aria-label="{{ __('Export') }}"
+                tooltip="{{ __('Export') }}"
+                class="sm:hidden"
+            />
+            <flux:button
+                :href="route('books.export', array_filter(['ownership' => $ownershipFilter]))"
+                icon="arrow-down-tray"
+                class="max-sm:hidden"
+            >
+                {{ __('Export') }}
             </flux:button>
         </div>
     </div>
