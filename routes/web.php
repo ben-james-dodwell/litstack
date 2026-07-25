@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DemoLoginController;
+use App\Http\Controllers\LibraryExportController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -14,6 +15,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::livewire('books/search', 'pages::books.search')->name('books.search');
     Route::livewire('books/shelf', 'pages::books.shelf')->name('books.shelf');
+    Route::get('books/export', LibraryExportController::class)->name('books.export');
     Route::livewire('books/{userBook}', 'pages::books.show')->name('books.show');
 });
 
