@@ -228,8 +228,10 @@ new class extends Component {
 
     // ── Panel: save actions ────────────────────────────────────────────────────
 
-    public function updatedPanelReadingStatusId(): void
+    public function setPanelReadingStatus(string $readingStatusId): void
     {
+        $this->panelReadingStatusId = $this->panelReadingStatusId === $readingStatusId ? '' : $readingStatusId;
+
         $status = ReadingStatus::find($this->panelReadingStatusId);
 
         if ($status?->name === 'in_progress' && blank($this->panelStartedAt)) {
@@ -375,7 +377,7 @@ new class extends Component {
             return;
         }
 
-        $this->selectBookToAdd($book['open_library_id']);
+        Flux::toast(variant: 'success', text: __('Book found — add it from the results below.'));
     }
 
     public function selectBookToAdd(string $openLibraryId): void
@@ -439,21 +441,6 @@ new class extends Component {
 }; ?>
 
 @php
-    $coverPalettes = [
-        ['bg' => '#1a1a1a', 'fg' => '#f2c14e'],
-        ['bg' => '#8b2e1f', 'fg' => '#f5e6c8'],
-        ['bg' => '#2d4a2b', 'fg' => '#e8d9a8'],
-        ['bg' => '#1f3a5f', 'fg' => '#f0e4c4'],
-        ['bg' => '#c76a3a', 'fg' => '#1a1a1a'],
-        ['bg' => '#4a2c5a', 'fg' => '#f3d77c'],
-        ['bg' => '#3d2817', 'fg' => '#e8c887'],
-        ['bg' => '#7a1f2b', 'fg' => '#f5e6c8'],
-        ['bg' => '#0f3a3a', 'fg' => '#d4a574'],
-        ['bg' => '#d9b382', 'fg' => '#2a1810'],
-        ['bg' => '#2b2b44', 'fg' => '#e5c85c'],
-        ['bg' => '#5a3a1f', 'fg' => '#f0dba0'],
-    ];
-
     $ratingLabels = ['', "Didn't land", 'Fine enough', 'Worth reading', 'Excellent', 'A keeper'];
 @endphp
 
@@ -548,16 +535,15 @@ new class extends Component {
                 @if (count($this->addResults) > 0)
                     @foreach ($this->addResults as $addBook)
                         @php $onShelf = in_array($addBook['open_library_id'], $this->addUserBookIds); @endphp
-                        @php $ap = $coverPalettes[crc32($addBook['open_library_id'] ?? '') % count($coverPalettes)]; @endphp
                         <div class="flex items-center gap-3.5 rounded-[10px] px-3 py-2.5 transition hover:bg-bg-2">
                             <div class="aspect-2/3 w-11 shrink-0 overflow-hidden rounded-sm shadow-sm">
-                                @if ($addBook['cover_url'])
-                                    <img src="{{ $addBook['cover_url'] }}" alt="{{ $addBook['title'] }}" class="h-full w-full object-cover" loading="lazy" />
-                                @else
-                                    <div class="cover-ph flex h-full flex-col p-1.5" style="background-color: {{ $ap['bg'] }}; color: {{ $ap['fg'] }}">
-                                        <span class="font-serif text-[8px] font-semibold leading-tight" style="color: {{ $ap['fg'] }}">{{ $addBook['title'] }}</span>
-                                    </div>
-                                @endif
+                                <x-book-cover
+                                    :cover-url="$addBook['cover_url']"
+                                    :title="$addBook['title']"
+                                    :author="$addBook['author'] ?? null"
+                                    :seed="$addBook['open_library_id'] ?? $addBook['title']"
+                                    size="xs"
+                                />
                             </div>
                             <div class="min-w-0 flex-1">
                                 <p class="font-serif text-[15px] font-semibold text-ink">{{ $addBook['title'] }}</p>
@@ -663,7 +649,7 @@ new class extends Component {
                     >
                         <flux:icon.funnel class="size-3.5 {{ $readingFilter ? 'text-accent-ink' : 'text-muted' }}" />
                         @if ($readingFilter)
-                            {{ ucfirst(str_replace('_', ' ', $this->readingStatuses->firstWhere('id', $readingFilter)?->name ?? 'Status')) }}
+                            {{ $this->readingStatuses->firstWhere('id', $readingFilter)?->label ?? __('Status') }}
                         @else
                             {{ __('Status') }}
                         @endif
@@ -671,7 +657,7 @@ new class extends Component {
                     <div x-show="open" x-transition class="absolute left-0 top-[calc(100%+6px)] z-20 min-w-45 rounded-[10px] border border-line-2 bg-card p-1.5 shadow-[0_10px_30px_-12px_rgba(30,20,10,0.2)] sm:left-auto sm:right-0">
                         <button wire:click="$set('readingFilter', '')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ !$readingFilter ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ __('All statuses') }}</button>
                         @foreach ($this->readingStatuses as $status)
-                            <button wire:click="$set('readingFilter', '{{ $status->id }}')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ $readingFilter == $status->id ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ ucfirst(str_replace('_', ' ', $status->name)) }}</button>
+                            <button wire:click="$set('readingFilter', '{{ $status->id }}')" @click="open = false" class="block w-full rounded-[7px] px-2.5 py-[7px] text-left font-sans text-[12.5px] transition hover:bg-bg-2 {{ $readingFilter == $status->id ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-ink-2' }}">{{ $status->label }}</button>
                         @endforeach
                     </div>
                 </div>
@@ -716,7 +702,6 @@ new class extends Component {
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5.5 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 @foreach ($this->userBooks as $userBook)
                     @php
-                        $palette  = $coverPalettes[$userBook->book->id % count($coverPalettes)];
                         $genres   = (array) ($userBook->book->genres ?? []);
                         $firstGenre = $genres[0] ?? null;
                         $started  = $userBook->started_at?->format('M j, Y');
@@ -736,29 +721,13 @@ new class extends Component {
                     >
                         {{-- Cover --}}
                         <div class="aspect-[2/3] w-14 shrink-0 overflow-hidden rounded-sm shadow-[0_1px_0_rgba(0,0,0,0.15),inset_2px_0_0_rgba(255,255,255,0.1),inset_-2px_0_0_rgba(0,0,0,0.15),inset_0_0_0_1px_rgba(0,0,0,0.08)] sm:w-full">
-                            @if ($userBook->book->cover_url)
-                                <img
-                                    src="{{ $userBook->book->cover_url }}"
-                                    alt="{{ $userBook->book->title }}"
-                                    class="h-full w-full object-cover"
-                                    loading="lazy"
-                                />
-                            @else
-                                <div
-                                    class="cover-ph relative flex h-full flex-col overflow-hidden p-[10px_9px]"
-                                    style="background-color: {{ $palette['bg'] }}; color: {{ $palette['fg'] }}"
-                                >
-                                    {{-- Spine rule --}}
-                                    <div class="absolute bottom-0 left-1 top-0 w-px opacity-20" style="background: {{ $palette['fg'] }}"></div>
-                                    <div class="font-serif text-[13px] font-semibold leading-tight" style="color: {{ $palette['fg'] }}">
-                                        {{ $userBook->book->title }}
-                                    </div>
-                                    <div class="mt-auto flex justify-between font-sans text-[8.5px] font-medium uppercase tracking-[0.04em] opacity-75" style="color: {{ $palette['fg'] }}">
-                                        <span>{{ last(explode(' ', $userBook->book->author ?? '')) }}</span>
-                                        <span>—</span>
-                                    </div>
-                                </div>
-                            @endif
+                            <x-book-cover
+                                :cover-url="$userBook->book->cover_url"
+                                :title="$userBook->book->title"
+                                :author="$userBook->book->author"
+                                :seed="$userBook->book->id"
+                                size="sm"
+                            />
                         </div>
 
                         {{-- Body + footer wrapper --}}
@@ -852,7 +821,6 @@ new class extends Component {
             @php
                 $sb      = $this->selectedUserBook;
                 $sbBook  = $sb->book;
-                $palette = $coverPalettes[$sbBook->id % count($coverPalettes)];
                 $days    = $sb->started_at
                     ? max(1, (int) $sb->started_at->diffInDays($sb->ended_at ?? now()))
                     : null;
@@ -888,14 +856,13 @@ new class extends Component {
                 <div class="mb-6 flex gap-6">
                     {{-- Cover --}}
                     <div class="aspect-[2/3] w-32 shrink-0 overflow-hidden rounded-[4px] shadow-[0_1px_0_rgba(0,0,0,0.15),inset_2px_0_0_rgba(255,255,255,0.1),inset_-2px_0_0_rgba(0,0,0,0.15),inset_0_0_0_1px_rgba(0,0,0,0.08),6px_8px_20px_-8px_rgba(30,20,10,0.3)]">
-                        @if ($sbBook->cover_url)
-                            <img src="{{ $sbBook->cover_url }}" alt="{{ $sbBook->title }}" class="h-full w-full object-cover" />
-                        @else
-                            <div class="cover-ph relative flex h-full flex-col overflow-hidden p-[14px_12px]" style="background-color: {{ $palette['bg'] }}; color: {{ $palette['fg'] }}">
-                                <div class="absolute bottom-0 left-1 top-0 w-px opacity-20" style="background: {{ $palette['fg'] }}"></div>
-                                <div class="font-serif text-[17px] font-semibold leading-tight" style="color: {{ $palette['fg'] }}">{{ $sbBook->title }}</div>
-                            </div>
-                        @endif
+                        <x-book-cover
+                            :cover-url="$sbBook->cover_url"
+                            :title="$sbBook->title"
+                            :author="$sbBook->author"
+                            :seed="$sbBook->id"
+                            size="lg"
+                        />
                     </div>
 
                     {{-- Meta --}}
@@ -960,9 +927,9 @@ new class extends Component {
                             <div class="flex overflow-hidden rounded-[10px] border border-line bg-card">
                                 @foreach ($this->readingStatuses as $rs)
                                     <button
-                                        wire:click="$set('panelReadingStatusId', '{{ $rs->id }}')"
+                                        wire:click="setPanelReadingStatus('{{ $rs->id }}')"
                                         class="flex-1 py-2 text-center font-sans text-[11px] transition {{ $panelReadingStatusId == $rs->id ? 'bg-accent-soft font-semibold text-accent-ink' : 'text-muted hover:bg-bg-2' }} {{ !$loop->last ? 'border-r border-line' : '' }}"
-                                    >{{ ucfirst(str_replace('_', ' ', $rs->name)) }}</button>
+                                    >{{ $rs->label }}</button>
                                 @endforeach
                             </div>
                         </div>
@@ -1073,16 +1040,15 @@ new class extends Component {
                 @if (count($this->addResults) > 0)
                     @foreach ($this->addResults as $addBook)
                         @php $onShelf = in_array($addBook['open_library_id'], $this->addUserBookIds); @endphp
-                        @php $ap = $coverPalettes[crc32($addBook['open_library_id'] ?? '') % count($coverPalettes)]; @endphp
                         <div class="flex items-center gap-3.5 rounded-[10px] px-3 py-2.5 transition hover:bg-bg-2">
                             <div class="aspect-2/3 w-11 shrink-0 overflow-hidden rounded-sm shadow-sm">
-                                @if ($addBook['cover_url'])
-                                    <img src="{{ $addBook['cover_url'] }}" alt="{{ $addBook['title'] }}" class="h-full w-full object-cover" loading="lazy" />
-                                @else
-                                    <div class="cover-ph flex h-full flex-col p-1.5" style="background-color: {{ $ap['bg'] }}; color: {{ $ap['fg'] }}">
-                                        <span class="font-serif text-[8px] font-semibold leading-tight" style="color: {{ $ap['fg'] }}">{{ $addBook['title'] }}</span>
-                                    </div>
-                                @endif
+                                <x-book-cover
+                                    :cover-url="$addBook['cover_url']"
+                                    :title="$addBook['title']"
+                                    :author="$addBook['author'] ?? null"
+                                    :seed="$addBook['open_library_id'] ?? $addBook['title']"
+                                    size="xs"
+                                />
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="font-serif text-[15px] font-semibold text-ink">{{ $addBook['title'] }}</p>

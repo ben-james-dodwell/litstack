@@ -26,6 +26,12 @@ class CacheCoverImage implements ShouldQueue
             return;
         }
 
+        if ($this->isPlaceholderImage($response->body())) {
+            $this->book->update(['cover_url' => '']);
+
+            return;
+        }
+
         $path = 'covers/'.$this->book->id.'.jpg';
 
         Storage::disk('public')->put($path, $response->body());
@@ -36,5 +42,14 @@ class CacheCoverImage implements ShouldQueue
     private function alreadyCached(): bool
     {
         return Storage::disk('public')->exists('covers/'.$this->book->id.'.jpg');
+    }
+
+    /**
+     * Open Library returns an HTTP 200 with a tiny 1x1 pixel image (rather than a 404)
+     * when no cover exists for an ISBN-guessed URL. Real thumbnails are always several KB.
+     */
+    private function isPlaceholderImage(string $body): bool
+    {
+        return strlen($body) < 1000;
     }
 }

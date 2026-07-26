@@ -76,6 +76,13 @@ test('reading status completed auto-fills both dates', function () {
         ->and($fresh->ended_at->toDateString())->toBe(now()->toDateString());
 });
 
+test('reading status label reads Started instead of In progress', function () {
+    Livewire::actingAs($this->user)
+        ->test('pages::books.show', ['userBook' => $this->userBook])
+        ->assertSee('Started')
+        ->assertDontSee('In progress');
+});
+
 test('manually changing started_at saves to database', function () {
     $date = '2024-01-15';
 

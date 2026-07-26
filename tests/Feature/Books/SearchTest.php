@@ -13,7 +13,7 @@ beforeEach(function () {
     $this->user = User::factory()->create();
 });
 
-test('scanning a valid isbn opens the add to shelf modal for the matching book', function () {
+test('scanning a valid isbn shows the matching book in results without opening the modal', function () {
     Http::fake([
         'openlibrary.org/*' => Http::response([
             'docs' => [[
@@ -28,8 +28,10 @@ test('scanning a valid isbn opens the add to shelf modal for the matching book',
     Livewire::actingAs($this->user)
         ->test('pages::books.search')
         ->call('scanIsbn', '9780441013593')
-        ->assertSet('selectedOpenLibraryId', '/works/OL1W')
-        ->assertDispatched('modal-show', name: 'add-to-shelf');
+        ->assertSet('selectedOpenLibraryId', null)
+        ->assertNotDispatched('modal-show', name: 'add-to-shelf')
+        ->assertDispatched('toast-show')
+        ->assertSee('Dune');
 });
 
 test('scanning a barcode with no matching book toasts instead of opening the modal', function () {

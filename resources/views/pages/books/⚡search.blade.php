@@ -87,7 +87,7 @@ new #[Title('Search Books')] class extends Component {
             return;
         }
 
-        $this->selectBook($book['open_library_id']);
+        Flux::toast(variant: 'success', text: __('Book found — add it from the results below.'));
     }
 
     public function selectBook(string $openLibraryId): void
@@ -205,18 +205,13 @@ new #[Title('Search Books')] class extends Component {
                     @php $onShelf = in_array($book['open_library_id'], $this->userBookIds); @endphp
                     <div class="flex flex-col gap-2">
                         <div class="relative aspect-[2/3] overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800">
-                            @if ($book['cover_url'])
-                                <img
-                                    src="{{ $book['cover_url'] }}"
-                                    alt="{{ $book['title'] }}"
-                                    class="h-full w-full object-cover"
-                                    loading="lazy"
-                                />
-                            @else
-                                <div class="flex h-full items-center justify-center p-4 text-center">
-                                    <flux:text class="text-xs text-zinc-400">{{ __('No cover') }}</flux:text>
-                                </div>
-                            @endif
+                            <x-book-cover
+                                :cover-url="$book['cover_url']"
+                                :title="$book['title']"
+                                :author="$book['author'] ?? null"
+                                :seed="$book['open_library_id'] ?? $book['title']"
+                                size="sm"
+                            />
                         </div>
 
                         <div class="flex flex-col gap-1">
