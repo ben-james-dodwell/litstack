@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - master
-  pull_request:
-    branches:
-      - master
   workflow_dispatch:
 
 permissions:
@@ -98,7 +95,7 @@ jobs:
             cd /var/www/litstack-demo
 
             git fetch --all
-            git reset --hard ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+            git reset --hard origin/master
 
             rm -rf vendor public/build
             tar xzf /tmp/release.tar.gz -C .
@@ -113,7 +110,6 @@ jobs:
 
   deploy-live:
     needs: [build, deploy-demo]
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: Production
