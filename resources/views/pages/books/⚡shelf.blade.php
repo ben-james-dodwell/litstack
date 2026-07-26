@@ -540,6 +540,7 @@ new class extends Component {
                                 <x-book-cover
                                     :cover-url="$addBook['cover_url']"
                                     :title="$addBook['title']"
+                                    :author="$addBook['author'] ?? null"
                                     :seed="$addBook['open_library_id'] ?? $addBook['title']"
                                     size="xs"
                                 />
@@ -726,7 +727,6 @@ new class extends Component {
                                 :author="$userBook->book->author"
                                 :seed="$userBook->book->id"
                                 size="sm"
-                                :show-author="true"
                             />
                         </div>
 
@@ -859,6 +859,7 @@ new class extends Component {
                         <x-book-cover
                             :cover-url="$sbBook->cover_url"
                             :title="$sbBook->title"
+                            :author="$sbBook->author"
                             :seed="$sbBook->id"
                             size="lg"
                         />
@@ -1044,6 +1045,7 @@ new class extends Component {
                                 <x-book-cover
                                     :cover-url="$addBook['cover_url']"
                                     :title="$addBook['title']"
+                                    :author="$addBook['author'] ?? null"
                                     :seed="$addBook['open_library_id'] ?? $addBook['title']"
                                     size="xs"
                                 />

@@ -211,7 +211,6 @@ new #[Title('Search Books')] class extends Component {
                                 :author="$book['author'] ?? null"
                                 :seed="$book['open_library_id'] ?? $book['title']"
                                 size="sm"
-                                :show-author="true"
                             />
                         </div>
 

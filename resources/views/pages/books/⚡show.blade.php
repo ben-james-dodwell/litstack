@@ -166,7 +166,6 @@ new #[Title('Book')] class extends Component {
                     :author="$this->userBook->book->author"
                     :seed="$this->userBook->book->id"
                     size="lg"
-                    :show-author="true"
                     fit="contain"
                 />
             </div>

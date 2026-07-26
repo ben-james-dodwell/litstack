@@ -88,6 +88,7 @@ new #[Title('Dashboard')] class extends Component {
                             <x-book-cover
                                 :cover-url="$userBook->book->cover_url"
                                 :title="$userBook->book->title"
+                                :author="$userBook->book->author"
                                 :seed="$userBook->book->id"
                                 size="sm"
                             />
@@ -120,6 +121,7 @@ new #[Title('Dashboard')] class extends Component {
                             <x-book-cover
                                 :cover-url="$userBook->book->cover_url"
                                 :title="$userBook->book->title"
+                                :author="$userBook->book->author"
                                 :seed="$userBook->book->id"
                                 size="sm"
                             />
