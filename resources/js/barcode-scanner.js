@@ -16,10 +16,12 @@ export default function barcodeScanner(method = 'scanIsbn') {
             this.error = null;
             this.usingFallback = ! ('BarcodeDetector' in window);
 
-            (this.usingFallback ? this.startFallback() : this.startNative()).catch(() => {
-                this.error = this.usingFallback
-                    ? 'Unable to start the camera.'
-                    : 'Camera access was denied.';
+            (this.usingFallback ? this.startFallback() : this.startNative()).catch((e) => {
+                console.error('Barcode scanner failed to start', e);
+
+                this.error = e?.name
+                    ? `Unable to start the camera (${e.name}): ${e.message}`
+                    : 'Unable to start the camera.';
             });
         },
 
@@ -42,6 +44,13 @@ export default function barcodeScanner(method = 'scanIsbn') {
         },
 
         async startNative() {
+            if (! navigator.mediaDevices?.getUserMedia) {
+                throw new DOMException(
+                    'Camera access requires HTTPS (or localhost).',
+                    'SecurityError',
+                );
+            }
+
             this.stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'environment' },
             });
