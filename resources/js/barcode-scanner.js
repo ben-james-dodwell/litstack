@@ -2,6 +2,12 @@ const BARCODE_FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e'];
 
 const QUAGGA_READERS = ['ean_reader', 'ean_8_reader', 'upc_reader', 'upc_e_reader'];
 
+// Plain DOM ids rather than x-ref: Flux's <flux:modal> renders its slot
+// inside a <dialog x-data="fluxModal(...)">, a nested Alpine component whose
+// boundary $refs cannot cross, so this.$refs.video would never resolve.
+const VIDEO_ELEMENT_ID = 'barcode-scanner-video';
+const QUAGGA_TARGET_ELEMENT_ID = 'barcode-scanner-quagga-target';
+
 export default function barcodeScanner(method = 'scanIsbn') {
     return {
         method,
@@ -51,12 +57,14 @@ export default function barcodeScanner(method = 'scanIsbn') {
                 );
             }
 
+            const video = document.getElementById(VIDEO_ELEMENT_ID);
+
             this.stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'environment' },
             });
 
-            this.$refs.video.srcObject = this.stream;
-            await this.$refs.video.play();
+            video.srcObject = this.stream;
+            await video.play();
 
             this.detector = new BarcodeDetector({ formats: BARCODE_FORMATS });
 
@@ -69,7 +77,7 @@ export default function barcodeScanner(method = 'scanIsbn') {
             }
 
             try {
-                const codes = await this.detector.detect(this.$refs.video);
+                const codes = await this.detector.detect(document.getElementById(VIDEO_ELEMENT_ID));
 
                 if (codes.length > 0) {
                     this.handleDetected(codes[0].rawValue);
@@ -91,7 +99,7 @@ export default function barcodeScanner(method = 'scanIsbn') {
             await Quagga.start({
                 inputStream: {
                     type: 'LiveStream',
-                    target: this.$refs.quaggaTarget,
+                    target: document.getElementById(QUAGGA_TARGET_ELEMENT_ID),
                     constraints: { facingMode: 'environment' },
                 },
                 decoder: { readers: QUAGGA_READERS },
