@@ -50,6 +50,43 @@ class Book extends Model
         );
     }
 
+    /**
+     * Colour pairs used to render a stylistic placeholder cover when no image is available.
+     *
+     * @return array<int, array{bg: string, fg: string}>
+     */
+    public static function coverPalettes(): array
+    {
+        return [
+            ['bg' => '#1a1a1a', 'fg' => '#f2c14e'],
+            ['bg' => '#8b2e1f', 'fg' => '#f5e6c8'],
+            ['bg' => '#2d4a2b', 'fg' => '#e8d9a8'],
+            ['bg' => '#1f3a5f', 'fg' => '#f0e4c4'],
+            ['bg' => '#c76a3a', 'fg' => '#1a1a1a'],
+            ['bg' => '#4a2c5a', 'fg' => '#f3d77c'],
+            ['bg' => '#3d2817', 'fg' => '#e8c887'],
+            ['bg' => '#7a1f2b', 'fg' => '#f5e6c8'],
+            ['bg' => '#0f3a3a', 'fg' => '#d4a574'],
+            ['bg' => '#d9b382', 'fg' => '#2a1810'],
+            ['bg' => '#2b2b44', 'fg' => '#e5c85c'],
+            ['bg' => '#5a3a1f', 'fg' => '#f0dba0'],
+        ];
+    }
+
+    /**
+     * Deterministically pick a placeholder palette for the given seed
+     * (a book id, or an Open Library id for books not yet persisted).
+     *
+     * @return array{bg: string, fg: string}
+     */
+    public static function coverPalette(int|string $seed): array
+    {
+        $palettes = self::coverPalettes();
+        $index = is_int($seed) ? $seed : crc32($seed);
+
+        return $palettes[$index % count($palettes)];
+    }
+
     /** @return BelongsToMany<User, $this> */
     public function users(): BelongsToMany
     {

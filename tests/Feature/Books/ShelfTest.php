@@ -171,7 +171,7 @@ test('adding a book keeps the search open so more books can be added', function 
     expect(UserBook::where(['user_id' => $this->user->id, 'book_id' => $book->id])->exists())->toBeTrue();
 });
 
-test('scanning a valid isbn opens the add to shelf modal for the matching book', function () {
+test('scanning a valid isbn shows the matching book in results without opening the modal', function () {
     Http::fake([
         'openlibrary.org/*' => Http::response([
             'docs' => [[
@@ -186,8 +186,10 @@ test('scanning a valid isbn opens the add to shelf modal for the matching book',
     Livewire::actingAs($this->user)
         ->test('pages::books.shelf')
         ->call('scanIsbnToAdd', '9780441013593')
-        ->assertSet('addSelectedOpenLibraryId', '/works/OL1W')
-        ->assertDispatched('modal-show', name: 'shelf-add-confirm');
+        ->assertSet('addSelectedOpenLibraryId', null)
+        ->assertNotDispatched('modal-show', name: 'shelf-add-confirm')
+        ->assertDispatched('toast-show')
+        ->assertSee('Dune');
 });
 
 test('scanning a barcode with no matching book toasts instead of opening the modal', function () {
@@ -240,6 +242,40 @@ test('scanning a book already on the shelf toasts instead of reopening the modal
         ->assertSet('addSelectedOpenLibraryId', null)
         ->assertNotDispatched('modal-show', name: 'shelf-add-confirm')
         ->assertDispatched('toast-show');
+});
+
+test('clicking the same reading status again clears it', function () {
+    $inProgress = ReadingStatus::where('name', 'in_progress')->first();
+    $book = Book::factory()->create();
+    $userBook = UserBook::factory()->create([
+        'user_id' => $this->user->id,
+        'book_id' => $book->id,
+        'ownership_status_id' => OwnershipStatus::where('name', 'owned')->first()->id,
+        'reading_status_id' => $inProgress->id,
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test('pages::books.shelf')
+        ->call('openBook', $userBook->id)
+        ->call('setPanelReadingStatus', (string) $inProgress->id)
+        ->assertSet('panelReadingStatusId', '');
+
+    expect($userBook->fresh()->reading_status_id)->toBeNull();
+});
+
+test('reading status label reads Started instead of In progress', function () {
+    $book = Book::factory()->create();
+    $userBook = UserBook::factory()->create([
+        'user_id' => $this->user->id,
+        'book_id' => $book->id,
+        'ownership_status_id' => OwnershipStatus::where('name', 'owned')->first()->id,
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test('pages::books.shelf')
+        ->call('openBook', $userBook->id)
+        ->assertSee('Started')
+        ->assertDontSee('In progress');
 });
 
 test('savePanelShelfEntry cannot update another users book', function () {

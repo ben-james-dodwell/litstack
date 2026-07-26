@@ -160,17 +160,15 @@ new #[Title('Book')] class extends Component {
         {{-- Book cover + metadata --}}
         <div class="flex min-w-0 flex-col gap-6 lg:col-span-2">
             <div class="aspect-[2/3] w-48 overflow-hidden rounded-xl bg-zinc-100 shadow-md dark:bg-zinc-800">
-                @if ($this->userBook->book->cover_url)
-                    <img
-                        src="{{ $this->userBook->book->cover_url }}"
-                        alt="{{ $this->userBook->book->title }}"
-                        class="h-full w-full object-contain"
-                    />
-                @else
-                    <div class="flex h-full items-center justify-center p-4 text-center">
-                        <flux:text class="text-sm text-zinc-400">{{ __('No cover') }}</flux:text>
-                    </div>
-                @endif
+                <x-book-cover
+                    :cover-url="$this->userBook->book->cover_url"
+                    :title="$this->userBook->book->title"
+                    :author="$this->userBook->book->author"
+                    :seed="$this->userBook->book->id"
+                    size="lg"
+                    :show-author="true"
+                    fit="contain"
+                />
             </div>
 
             <div class="flex flex-col gap-1">
@@ -219,7 +217,7 @@ new #[Title('Book')] class extends Component {
                     <flux:select wire:model.live="readingStatusId" :label="__('Reading status')" class="w-44">
                         <flux:select.option value="">{{ __('Not started') }}</flux:select.option>
                         @foreach ($this->readingStatuses as $status)
-                            <flux:select.option :value="$status->id">{{ ucfirst(str_replace('_', ' ', $status->name)) }}</flux:select.option>
+                            <flux:select.option :value="$status->id">{{ $status->label }}</flux:select.option>
                         @endforeach
                     </flux:select>
                 </div>

@@ -85,17 +85,12 @@ new #[Title('Dashboard')] class extends Component {
                 @foreach ($this->currentlyReading as $userBook)
                     <a href="{{ route('books.show', $userBook) }}" wire:navigate class="group flex w-32 shrink-0 flex-col gap-2">
                         <div class="aspect-[2/3] overflow-hidden rounded-lg bg-zinc-100 transition-transform group-hover:scale-[1.02] dark:bg-zinc-800">
-                            @if ($userBook->book->cover_url)
-                                <img
-                                    src="{{ $userBook->book->cover_url }}"
-                                    alt="{{ $userBook->book->title }}"
-                                    class="h-full w-full object-cover"
-                                />
-                            @else
-                                <div class="flex h-full items-center justify-center p-2 text-center">
-                                    <flux:text class="text-xs text-zinc-400">{{ $userBook->book->title }}</flux:text>
-                                </div>
-                            @endif
+                            <x-book-cover
+                                :cover-url="$userBook->book->cover_url"
+                                :title="$userBook->book->title"
+                                :seed="$userBook->book->id"
+                                size="sm"
+                            />
                         </div>
                         <div>
                             <flux:text class="line-clamp-2 text-sm font-medium">{{ $userBook->book->title }}</flux:text>
@@ -122,18 +117,12 @@ new #[Title('Dashboard')] class extends Component {
                 @foreach ($this->recentlyAdded as $userBook)
                     <a href="{{ route('books.show', $userBook) }}" wire:navigate class="group flex flex-col gap-2">
                         <div class="aspect-[2/3] overflow-hidden rounded-lg bg-zinc-100 transition-transform group-hover:scale-[1.02] dark:bg-zinc-800">
-                            @if ($userBook->book->cover_url)
-                                <img
-                                    src="{{ $userBook->book->cover_url }}"
-                                    alt="{{ $userBook->book->title }}"
-                                    class="h-full w-full object-cover"
-                                    loading="lazy"
-                                />
-                            @else
-                                <div class="flex h-full items-center justify-center p-2 text-center">
-                                    <flux:text class="text-xs text-zinc-400">{{ $userBook->book->title }}</flux:text>
-                                </div>
-                            @endif
+                            <x-book-cover
+                                :cover-url="$userBook->book->cover_url"
+                                :title="$userBook->book->title"
+                                :seed="$userBook->book->id"
+                                size="sm"
+                            />
                         </div>
                         <div>
                             <flux:text class="line-clamp-2 text-xs font-medium group-hover:text-zinc-600 dark:group-hover:text-zinc-300">
