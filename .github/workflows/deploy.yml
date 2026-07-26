@@ -8,72 +8,51 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.3'
-          tools: composer:v2
-          coverage: none
-
-      - name: Setup Node
-        uses: actions/setup-node@v7
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Get Composer Cache Directory
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Composer Dependencies
-        uses: actions/cache@v6
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-release-${{ hashFiles('composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-release-
-
-      - name: Install PHP Dependencies
-        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Install Node Dependencies
-        run: npm ci
-
-      - name: Build Assets
-        run: npm run build
-
-      - name: Package Release Artifact
-        run: tar czf release.tar.gz vendor public/build
-
-      - name: Upload Release Artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: release
-          path: release.tar.gz
-          retention-days: 1
-
   deploy-live:
-    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: Production
     steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve checks.yml run that built this commit
+        id: source-run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+
+          PR_NUMBER=$(git log -1 --pretty=%s | grep -oP '(?<=\(#)\d+(?=\)$)') || true
+
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::error::Could not find a merged PR number in the latest commit message; refusing to rebuild the release artifact (this pipeline builds once in checks.yml and reuses that artifact everywhere, it never rebuilds for deploy)."
+            exit 1
+          fi
+
+          HEAD_SHA=$(gh api "repos/${{ github.repository }}/pulls/$PR_NUMBER" --jq '.head.sha')
+
+          RUN_ID=$(gh api "repos/${{ github.repository }}/actions/workflows/checks.yml/runs?head_sha=$HEAD_SHA&event=pull_request&status=success" --jq '.workflow_runs[0].id // empty')
+
+          if [ -z "$RUN_ID" ]; then
+            echo "::error::Could not find a successful checks.yml run for commit $HEAD_SHA (PR #$PR_NUMBER). Its release artifact may have expired (5 day retention) - re-run checks.yml on that PR (or push an empty commit) and retry."
+            exit 1
+          fi
+
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+
       - name: Download Release Artifact
         uses: actions/download-artifact@v8
         with:
           name: release
+          run-id: ${{ steps.source-run.outputs.run_id }}
+          github-token: ${{ github.token }}
 
       - name: Copy Release Artifact to Server
         uses: appleboy/scp-action@v1.0.0
