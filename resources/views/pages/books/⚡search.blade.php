@@ -63,6 +63,33 @@ new #[Title('Search Books')] class extends Component {
             ->all();
     }
 
+    public function scanIsbn(string $isbn): void
+    {
+        $this->query = preg_replace('/[\s\-]/', '', $isbn) ?? '';
+
+        if (! $this->isIsbnSearch) {
+            Flux::toast(variant: 'danger', text: __('That barcode is not a valid ISBN.'));
+
+            return;
+        }
+
+        $book = collect($this->results)->first();
+
+        if (! $book) {
+            Flux::toast(variant: 'danger', text: __('No book found for that barcode.'));
+
+            return;
+        }
+
+        if (in_array($book['open_library_id'], $this->userBookIds)) {
+            Flux::toast(text: __('That book is already on your shelf.'));
+
+            return;
+        }
+
+        $this->selectBook($book['open_library_id']);
+    }
+
     public function selectBook(string $openLibraryId): void
     {
         $this->selectedOpenLibraryId = $openLibraryId;
@@ -121,13 +148,47 @@ new #[Title('Search Books')] class extends Component {
         <flux:subheading>{{ __('Search by title, author, or paste an ISBN.') }}</flux:subheading>
     </div>
 
-    <flux:input
-        wire:model.live.debounce.400ms="query"
-        icon="magnifying-glass"
-        placeholder="{{ __('Search by title, author, or ISBN…') }}"
-        clearable
-        class="max-w-xl"
-    />
+    <div class="flex max-w-xl items-center gap-2">
+        <flux:input
+            wire:model.live.debounce.400ms="query"
+            icon="magnifying-glass"
+            placeholder="{{ __('Search by title, author, or ISBN…') }}"
+            clearable
+            class="flex-1"
+        />
+
+        <div x-data="barcodeScanner">
+            <flux:modal.trigger name="barcode-scanner">
+                <flux:button icon="camera" x-on:click="start()">{{ __('Scan') }}</flux:button>
+            </flux:modal.trigger>
+
+            <flux:modal name="barcode-scanner" class="max-w-sm" x-on:close="stop()">
+                <div class="space-y-4">
+                    <div>
+                        <flux:heading size="lg">{{ __('Scan a barcode') }}</flux:heading>
+                        <flux:subheading>{{ __("Point your camera at the book's barcode.") }}</flux:subheading>
+                    </div>
+
+                    <div class="relative aspect-video overflow-hidden rounded-lg bg-black">
+                        <video
+                            x-ref="video"
+                            x-show="!usingFallback"
+                            class="h-full w-full object-cover"
+                            muted
+                            playsinline
+                        ></video>
+                        <div
+                            x-ref="quaggaTarget"
+                            x-show="usingFallback"
+                            class="h-full w-full [&_canvas]:hidden [&_video]:h-full [&_video]:w-full [&_video]:object-cover"
+                        ></div>
+                    </div>
+
+                    <flux:text x-show="error" x-text="error" class="text-red-600 dark:text-red-400" />
+                </div>
+            </flux:modal>
+        </div>
+    </div>
 
     @if (strlen(trim($query)) >= 2)
         @if ($this->isIsbnSearch)

@@ -171,6 +171,77 @@ test('adding a book keeps the search open so more books can be added', function 
     expect(UserBook::where(['user_id' => $this->user->id, 'book_id' => $book->id])->exists())->toBeTrue();
 });
 
+test('scanning a valid isbn opens the add to shelf modal for the matching book', function () {
+    Http::fake([
+        'openlibrary.org/*' => Http::response([
+            'docs' => [[
+                'key' => '/works/OL1W',
+                'title' => 'Dune',
+                'author_name' => ['Frank Herbert'],
+                'isbn' => ['9780441013593'],
+            ]],
+        ]),
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test('pages::books.shelf')
+        ->call('scanIsbnToAdd', '9780441013593')
+        ->assertSet('addSelectedOpenLibraryId', '/works/OL1W')
+        ->assertDispatched('modal-show', name: 'shelf-add-confirm');
+});
+
+test('scanning a barcode with no matching book toasts instead of opening the modal', function () {
+    Http::fake([
+        'openlibrary.org/*' => Http::response(['docs' => []]),
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test('pages::books.shelf')
+        ->call('scanIsbnToAdd', '9780441013593')
+        ->assertSet('addSelectedOpenLibraryId', null)
+        ->assertNotDispatched('modal-show', name: 'shelf-add-confirm')
+        ->assertDispatched('toast-show');
+});
+
+test('scanning a non isbn barcode toasts without performing a lookup', function () {
+    Livewire::actingAs($this->user)
+        ->test('pages::books.shelf')
+        ->call('scanIsbnToAdd', '123')
+        ->assertSet('addSelectedOpenLibraryId', null)
+        ->assertNotDispatched('modal-show', name: 'shelf-add-confirm')
+        ->assertDispatched('toast-show');
+
+    Http::assertNothingSent();
+});
+
+test('scanning a book already on the shelf toasts instead of reopening the modal', function () {
+    Http::fake([
+        'openlibrary.org/*' => Http::response([
+            'docs' => [[
+                'key' => '/works/OL1W',
+                'title' => 'Dune',
+                'author_name' => ['Frank Herbert'],
+                'isbn' => ['9780441013593'],
+            ]],
+        ]),
+    ]);
+
+    $owned = OwnershipStatus::where('name', 'owned')->first();
+    $book = Book::factory()->create(['open_library_id' => '/works/OL1W']);
+    UserBook::factory()->create([
+        'user_id' => $this->user->id,
+        'book_id' => $book->id,
+        'ownership_status_id' => $owned->id,
+    ]);
+
+    Livewire::actingAs($this->user)
+        ->test('pages::books.shelf')
+        ->call('scanIsbnToAdd', '978-0-4410-1359-3')
+        ->assertSet('addSelectedOpenLibraryId', null)
+        ->assertNotDispatched('modal-show', name: 'shelf-add-confirm')
+        ->assertDispatched('toast-show');
+});
+
 test('savePanelShelfEntry cannot update another users book', function () {
     $owned = OwnershipStatus::where('name', 'owned')->first();
     $other = User::factory()->create();
