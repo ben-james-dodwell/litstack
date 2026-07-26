@@ -1122,14 +1122,14 @@ new class extends Component {
 
             <div class="relative aspect-video overflow-hidden rounded-lg bg-black">
                 <video
-                    x-ref="video"
+                    id="barcode-scanner-video"
                     x-show="!usingFallback"
                     class="h-full w-full object-cover"
                     muted
                     playsinline
                 ></video>
                 <div
-                    x-ref="quaggaTarget"
+                    id="barcode-scanner-quagga-target"
                     x-show="usingFallback"
                     class="h-full w-full [&_canvas]:hidden [&_video]:h-full [&_video]:w-full [&_video]:object-cover"
                 ></div>
