@@ -351,6 +351,33 @@ new class extends Component {
             ->all();
     }
 
+    public function scanIsbnToAdd(string $isbn): void
+    {
+        $this->addQuery = preg_replace('/[\s\-]/', '', $isbn) ?? '';
+
+        if (! $this->looksLikeIsbn($this->addQuery)) {
+            Flux::toast(variant: 'danger', text: __('That barcode is not a valid ISBN.'));
+
+            return;
+        }
+
+        $book = collect($this->addResults)->first();
+
+        if (! $book) {
+            Flux::toast(variant: 'danger', text: __('No book found for that barcode.'));
+
+            return;
+        }
+
+        if (in_array($book['open_library_id'], $this->addUserBookIds)) {
+            Flux::toast(text: __('That book is already on your shelf.'));
+
+            return;
+        }
+
+        $this->selectBookToAdd($book['open_library_id']);
+    }
+
     public function selectBookToAdd(string $openLibraryId): void
     {
         $this->addSelectedOpenLibraryId = $openLibraryId;
@@ -432,7 +459,7 @@ new class extends Component {
 
 <div
     class="relative flex h-full w-full flex-1 flex-col overflow-hidden"
-    x-data="{ addSearchOpen: false }"
+    x-data="{ addSearchOpen: false, ...barcodeScanner('scanIsbnToAdd') }"
     @close-add-search.window="addSearchOpen = false"
     x-effect="document.title = $wire.pageTitle"
 >
@@ -502,6 +529,12 @@ new class extends Component {
                     clearable
                 />
             </div>
+            <flux:button
+                icon="camera"
+                aria-label="{{ __('Scan barcode') }}"
+                tooltip="{{ __('Scan barcode') }}"
+                x-on:click="$flux.modal('barcode-scanner').show(); start()"
+            />
             <button
                 @click="addSearchOpen = false"
                 class="shrink-0 rounded-lg px-2 py-2 font-sans text-[14px] text-muted transition hover:text-ink"
@@ -1018,14 +1051,20 @@ new class extends Component {
 
     {{-- ── Add-book search modal ─────────────────────────────────────────────── --}}
     <flux:modal name="shelf-add-search" class="p-0" style="width: 780px; max-width: 100%">
-        <div class="px-5 py-4">
+        <div class="flex items-center gap-2 px-5 py-4">
             <flux:input
                 wire:model.live.debounce.400ms="addQuery"
                 icon="magnifying-glass"
                 placeholder="{{ __('Search by title, author, or ISBN…') }}"
                 clearable
                 autofocus
-                class="font-serif text-[18px]"
+                class="flex-1 font-serif text-[18px]"
+            />
+            <flux:button
+                icon="camera"
+                aria-label="{{ __('Scan barcode') }}"
+                tooltip="{{ __('Scan barcode') }}"
+                x-on:click="$flux.modal('barcode-scanner').show(); start()"
             />
         </div>
 
@@ -1070,6 +1109,33 @@ new class extends Component {
                     </div>
                 @endif
             @endif
+        </div>
+    </flux:modal>
+
+    {{-- Scan barcode modal --}}
+    <flux:modal name="barcode-scanner" class="max-w-sm" x-on:close="stop()">
+        <div class="space-y-4">
+            <div>
+                <flux:heading size="lg">{{ __('Scan a barcode') }}</flux:heading>
+                <flux:subheading>{{ __("Point your camera at the book's barcode.") }}</flux:subheading>
+            </div>
+
+            <div class="relative aspect-video overflow-hidden rounded-lg bg-black">
+                <video
+                    x-ref="video"
+                    x-show="!usingFallback"
+                    class="h-full w-full object-cover"
+                    muted
+                    playsinline
+                ></video>
+                <div
+                    x-ref="quaggaTarget"
+                    x-show="usingFallback"
+                    class="h-full w-full [&_canvas]:hidden [&_video]:h-full [&_video]:w-full [&_video]:object-cover"
+                ></div>
+            </div>
+
+            <flux:text x-show="error" x-text="error" class="text-red-600 dark:text-red-400" />
         </div>
     </flux:modal>
 
