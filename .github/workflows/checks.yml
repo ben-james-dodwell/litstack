@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: checks-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   quality:
@@ -121,3 +121,98 @@ jobs:
         if: success() || failure()
         with:
           sarif_file: results.sarif
+
+  build:
+    needs: [quality, ci, checkov]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+          coverage: none
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer Dependencies
+        uses: actions/cache@v6
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-release-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-release-
+
+      - name: Install PHP Dependencies
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Build Assets
+        run: npm run build
+
+      - name: Package Release Artifact
+        run: tar czf release.tar.gz vendor public/build
+
+      - name: Upload Release Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: release
+          path: release.tar.gz
+          retention-days: 1
+
+  deploy-demo:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: Demo
+    steps:
+      - name: Download Release Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: release
+
+      - name: Copy Release Artifact to Server
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.DEMO_SSH_HOST }}
+          username: ${{ secrets.DEMO_SSH_USER }}
+          key: ${{ secrets.DEMO_SSH_KEY }}
+          source: release.tar.gz
+          target: /tmp
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.DEMO_SSH_HOST }}
+          username: ${{ secrets.DEMO_SSH_USER }}
+          key: ${{ secrets.DEMO_SSH_KEY }}
+          script: |
+            set -e
+            cd /var/www/litstack-demo
+
+            git fetch --all
+            git reset --hard ${{ github.event.pull_request.head.sha }}
+
+            rm -rf vendor public/build
+            tar xzf /tmp/release.tar.gz -C .
+            rm -f /tmp/release.tar.gz
+
+            php artisan migrate --force
+            php artisan db:seed --class=Database\\Seeders\\ShelfSeeder --force
+            php artisan optimize:clear
+            php artisan optimize
+
+            php artisan queue:restart
