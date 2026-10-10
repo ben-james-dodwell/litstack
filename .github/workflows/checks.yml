@@ -108,7 +108,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Run Checkov
-        uses: bridgecrewio/checkov-action@v12.3114.0
+        uses: bridgecrewio/checkov-action@v12.3131.0
         with:
           directory: .github/workflows
           framework: github_actions
